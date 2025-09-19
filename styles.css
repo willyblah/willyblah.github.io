@@ -1,0 +1,326 @@
+:root {
+  --bg: #0f1724;
+  --card: #0b1220;
+  --accent: #7c3aed;
+  --muted: #94a3b8;
+  --danger: #ef4444;
+  --glass: rgba(255, 255, 255, 0.03);
+  --panel-pad: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #071025 0%, #081827 60%);
+  color: #dbe6f0;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.screen {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
+}
+
+.hidden {
+  display: none
+}
+
+.title {
+  font-size: 44px;
+  margin: 6px 0;
+  color: var(--accent);
+  letter-spacing: 1px
+}
+
+.title-small {
+  font-weight: 600;
+  color: var(--accent)
+}
+
+.hud {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: var(--muted)
+}
+
+.panel {
+  background: var(--glass);
+  padding: var(--panel-pad);
+  border-radius: 10px;
+  margin-bottom: 10px
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer
+}
+
+.btn.primary {
+  background: linear-gradient(90deg, var(--accent), #5b21b6);
+  border: none;
+  color: white
+}
+
+/* new shop color */
+.btn.shop {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  border: none;
+  color: white;
+}
+
+.btn.danger {
+  background: linear-gradient(90deg, var(--danger), #b91c1c);
+  border: none;
+  color: white
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px
+}
+
+/* Battle layout */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px
+}
+
+.topbar .left,
+.topbar .right {
+  display: flex;
+  gap: 10px;
+  align-items: center
+}
+
+.content {
+  display: flex;
+  gap: 12px
+}
+
+#game-canvas {
+  background: linear-gradient(180deg, #9ad0ff 0%, #7fbfff 100%);
+  border-radius: 8px;
+  border: 6px solid rgba(255, 255, 255, 0.06)
+}
+
+.sidepanel {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px
+}
+
+/* healthbar */
+.healthbar {
+  width: 180px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.03)
+}
+
+/* transition for emptying animation (we'll override duration temporarily when needed) */
+.hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #34d399, #10b981);
+  transition: width 400ms ease;
+}
+
+/* skill/tactic buttons */
+.skill-btn,
+.tactic-btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  position: relative;
+}
+
+.skill-btn.dragging,
+.tactic-btn.dragging {
+  opacity: 0.5
+}
+
+.skill-count {
+  opacity: 0.9;
+  font-weight: 600;
+  margin-left: auto;
+  color: var(--muted)
+}
+
+/* numeric badge */
+.num-badge {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+/* shop */
+.shop-lists {
+  display: flex;
+  gap: 12px
+}
+
+.shop-panel {
+  flex: 1
+}
+
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px
+}
+
+.shop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px
+}
+
+/* tooltip */
+.tooltip {
+  position: fixed;
+  background: #071426;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px;
+  border-radius: 6px;
+  color: #cfe9ff;
+  z-index: 999;
+  pointer-events: none;
+  max-width: 260px
+}
+
+.tooltip.hidden {
+  display: none
+}
+
+/* Messages stack (top-right) */
+.messages {
+  position: fixed;
+  right: 20px;
+  top: 18px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 320px;
+}
+
+.message {
+  background: rgba(10, 20, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #e6f6ff;
+  font-size: 14px;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+  opacity: 0;
+  transform: translateX(10px);
+  pointer-events: auto;
+  animation: msgIn 300ms forwards;
+}
+
+/* message types */
+.message.info {
+  background: linear-gradient(90deg, #0ea5e9, #0284c7);
+  color: white;
+}
+
+.message.success {
+  background: linear-gradient(90deg, #10b981, #059669);
+  color: white;
+}
+
+.message.warn {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  color: white;
+}
+
+.message.error {
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
+  color: white;
+}
+
+@keyframes msgIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes msgOut {
+  to {
+    opacity: 0;
+    transform: translateX(10px);
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* small */
+.title-small {
+  font-size: 14px
+}
+
+/* Responsive */
+@media (max-width:1000px) {
+  .content {
+    flex-direction: column
+  }
+
+  .sidepanel {
+    width: 100%
+  }
+
+  #game-canvas {
+    width: 100%;
+    height: 360px
+  }
+}
