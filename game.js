@@ -1129,7 +1129,7 @@
     if (!state.battle) return;
     if (state.battle.currentActor !== 'opponent') return;
 
-    const delay = 100 + Math.random() * 800;
+    const delay = 200 + Math.random() * 800;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1217,7 +1217,7 @@
       } else {
         wander(opponent);
       }
-      setTimeout(() => switchTurn(), 900 + Math.random() * 600);
+      setTimeout(() => switchTurn(), 800 + Math.random() * 600);
     }, delay);
   }
 
