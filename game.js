@@ -1033,12 +1033,13 @@
       return;
     }
 
-    const skill = SKILLS[name];
     const attackVal = getSkillAttackValue(name, player);
-    if (inRangeAndLOS(player, opponent) && (Math.random() < (skill.acc || 1))) {
+    if (inRangeAndLOS(player, opponent) && (Math.random() < (SKILLS[name].acc || 1))) {
       opponent.applyDamage(attackVal);
       showMessage(`You used <strong>${name}</strong>! Opponent loses ${attackVal} HP.`, 'info');
       animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
+    } else if (!inRangeAndLOS(player, opponent)) {
+      showMessage(`You used <strong>${name}</strong>! Out of range or blocked by wall.`, 'warn');
     } else {
       showMessage(`You used <strong>${name}</strong>! Missed!`, 'warn');
     }
@@ -1132,7 +1133,7 @@
     if (!state.battle) return;
     if (state.battle.currentActor !== 'opponent') return;
 
-    const delay = 400 + Math.random() * 800;
+    const delay = 1000 + Math.random() * 800;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1234,9 +1235,8 @@
       switchTurn();
       return;
     }
-    const skill = SKILLS[name];
     const attackVal = getSkillAttackValue(name, opponent);
-    if (Math.random() < (skill.acc || 1)) {
+    if (Math.random() < (SKILLS[name].acc || 1)) {
       player.applyDamage(attackVal);
       showMessage(`Opponent used <strong>${name}</strong>! You lose ${attackVal} HP.`, 'error');
       animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
