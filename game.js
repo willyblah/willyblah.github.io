@@ -640,6 +640,9 @@
     const startHp = saveState.maxHealth;
     player = new Actor(spawns.first[0], spawns.first[1], startHp, PLAYER_SPEED, '#10b981');
     opponent = new Actor(spawns.second[0], spawns.second[1], Math.max(8, Math.floor(startHp * (0.9 + Math.random() * 0.2))), OPP_SPEED, '#ef4444');
+    // opponent AI chase tracking
+    opponent.isChasing = false;
+    opponent.lastPostChase = 0;
 
     // prepare battle owned counts per battle
     battleOwnedSkills = {};
@@ -771,26 +774,34 @@
       player.vy *= 0.8;
     }
 
-    // AI default movement if none
-    if (!opponent.hasOwnProperty('aiTimer') || opponent.aiTimer < Date.now()) {
+    // AI movement
+    const currentActor = state.battle && state.battle.currentActor;
+    if (currentActor === 'opponent' || !opponent.hasOwnProperty('aiTimer') || opponent.aiTimer < Date.now()) {
       const dist = Math.hypot(player.x - opponent.x, player.y - opponent.y);
-      const currentActor = state.battle && state.battle.currentActor;
       if (currentActor === 'player') {
-        // Player's turn: opponent tries to run away to keep distance and avoid hazards
-        if (dist < 260) {
-          moveAway(opponent, player.x, player.y);
-        } else {
-          // keep distance / idle
-          opponent.vx *= 0.85; opponent.vy *= 0.85;
+        // move away if too close
+        if (dist < 260) moveAway(opponent, player.x, player.y);
+        else { opponent.vx *= 0.85; opponent.vy *= 0.85; }
+        if (opponent.isChasing) {
+          opponent.isChasing = false;
+          opponentAIChoose();
         }
       } else {
-        // Opponent's turn or neutral: get closer to attack or pathfind towards player
-        if (dist > 180) {
+        // Chase if far or hiding
+        if (dist > 220 || !hasLineOfSight(opponent, player)) {
           const path = findPath(opponent.x, opponent.y, player.x, player.y);
-          if (path) followPath(opponent, path);
-          else moveTowards(opponent, player.x, player.y);
+          if (path) {
+            followPath(opponent, path);
+          } else {
+            moveTowards(opponent, player.x, player.y);
+          }
+          opponent.isChasing = true;
         } else {
           opponent.vx *= 0.85; opponent.vy *= 0.85;
+          if (opponent.isChasing) {
+            opponent.isChasing = false;
+            opponentAIChoose();
+          }
         }
       }
     }
@@ -1118,7 +1129,7 @@
     if (!state.battle) return;
     if (state.battle.currentActor !== 'opponent') return;
 
-    const delay = 400 + Math.random() * 900;
+    const delay = 100 + Math.random() * 800;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1192,7 +1203,6 @@
             if (state.battle && state.battle.currentActor === 'opponent') {
               // check again LOS/range; if still not in range, switch turn
               if (isSkillInRangeAndLOS(opponent, player, bestSkill)) resolveOpponentSkill(bestSkill);
-              else switchTurn();
             }
           }, 650 + Math.random() * 250);
           return;
@@ -1222,6 +1232,18 @@
       const sx = actorA.x + (dx * (i / steps));
       const sy = actorA.y + (dy * (i / steps));
       if (tileAt(sx, sy) === 2) return false;
+    }
+    return true;
+  }
+
+  function hasLineOfSight(actorA, actorB) {
+    const dx = actorB.x - actorA.x; const dy = actorB.y - actorA.y;
+    const dist = Math.hypot(dx, dy);
+    const steps = Math.ceil(dist / 8) || 1;
+    for (let i = 1; i < steps; i++) {
+      const sx = actorA.x + (dx * (i / steps));
+      const sy = actorA.y + (dy * (i / steps));
+      if (tileAt(sx, sy) === 2) return false; // blocked by wall
     }
     return true;
   }
@@ -1341,7 +1363,7 @@
     actor.vy = Math.sin(ang) * (actor.speed * 0.6);
   }
 
-  // move away from a point: try to pathfind to a tile that increases distance, prefer safe tiles
+  // pathfind to a tile that increases distance
   function moveAway(actor, fromX, fromY) {
     // sample candidate targets in a circle; prefer farthest walkable safe tile
     let best = null; let bestDist = -Infinity;
@@ -1395,7 +1417,7 @@
     return Math.max(1, reward);
   }
 
-  // ---- Misc UI / interactions ----
+  // ---- UI / interactions ----
   function setupUI() {
     renderStartUI();
     btnShop.addEventListener('click', () => { showShop(); renderShopUI(); });
@@ -1407,5 +1429,4 @@
   window.useTacticByName = useTacticByName;
 
   showStart();
-
 })();
