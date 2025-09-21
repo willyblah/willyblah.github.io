@@ -1357,7 +1357,7 @@
         if (saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0)
           totalAttack += s.attack;
       });
-      awarded = 1 + Math.floor(totalAttack / 50) + Math.floor(saveState.maxHealth / 10);
+      awarded = 2 + Math.floor((totalAttack + saveState.maxHealth) / 40);
       saveState.diamonds = (saveState.diamonds || 0) + awarded;
       save(saveState);
     }
