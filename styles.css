@@ -150,7 +150,6 @@ body {
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, #34d399, #10b981);
-  transition: width 400ms ease;
 }
 
 /* skill/tactic buttons */
@@ -260,22 +259,18 @@ body {
 /* message types */
 .message.info {
   background: linear-gradient(90deg, #0ea5e9, #0284c7);
-  color: white;
 }
 
 .message.success {
   background: linear-gradient(90deg, #10b981, #059669);
-  color: white;
 }
 
 .message.warn {
   background: linear-gradient(90deg, #f59e0b, #f97316);
-  color: white;
 }
 
 .message.error {
   background: linear-gradient(90deg, #ef4444, #b91c1c);
-  color: white;
 }
 
 @keyframes msgIn {

@@ -1,5 +1,4 @@
 (() => {
-  // Utility
   const $ = (sel) => document.querySelector(sel);
   const storageKey = "thegame_save_v1";
 
@@ -42,11 +41,10 @@
       const parsed = JSON.parse(s);
 
       const ownedSkills = { ...(parsed.ownedSkills || {}) };
-
       // Add any missing or null/default skills
       Object.keys(SKILLS).forEach(k => {
         const val = ownedSkills[k];
-        if (val == null) { // covers both undefined and null
+        if (val == null) {
           if (SKILLS[k].default) ownedSkills[k] = Infinity;
           else ownedSkills[k] = 0;
         }
@@ -100,6 +98,8 @@
   const battleTacticsEl = $("#battle-tactics");
   const playerHpFill = $("#player-hp-fill");
   const opponentHpFill = $("#opponent-hp-fill");
+  const playerHealthText = $("#player-health-text");
+  const opponentHealthText = $("#opponent-health-text");
   const hudDiamondsEl = $("#hud-diamonds");
   const turnIndicatorEl = $("#turn-indicator");
   const btnBattle = $("#btn-battle");
@@ -191,7 +191,6 @@
     return r >= 0 && r < MAP_H && c >= 0 && c < MAP_W;
   }
 
-  // all non-wall, non-void tiles are walkable
   function walkableTile(r, c) {
     if (!inBounds(r, c)) return false;
     const t = grid[r][c];
@@ -202,14 +201,13 @@
     return { x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 };
   }
 
-  // Tile traversal cost
   function tileCost(r, c) {
     if (!inBounds(r, c)) return 9999;
     const t = grid[r][c];
     switch (t) {
       case 1: return 1.0;   // land
       case 3: return 1.2;   // water (slightly slower)
-      case 4: return 8.0;   // lava (very costly, avoid unless necessary)
+      case 4: return 8.0;   // lava (avoid unless necessary)
       case 5: return 4.0;   // cactus (costly but less than lava)
       case 6: return 1.5;   // cobweb (slower)
       default: return 9999; // void / wall (not walkable)
@@ -379,7 +377,8 @@
   let spawns = spawnPositions(grid);
 
   let player = null, opponent = null;
-  let battleOwnedSkills = {}, battleOwnedTactics = {};
+  let battlePlayerSkills = {}, battlePlayerTactics = {};
+  let battleOppSkills = {}, battleOppTactics = {};
   let state = { phase: "pre", battle: null };
 
   // keyboard movement + shortcuts
@@ -392,8 +391,18 @@
 
     keysDown[k] = true; // movement keys state
 
-    if (k === 'e') { expectSkillNumber = true; expectTacticNumber = false; flashHint('Select skill: press 1-9'); }
-    if (k === 'f') { expectTacticNumber = true; expectSkillNumber = false; flashHint('Select tactic: press 1-9'); }
+    if (k === 'e') {
+      expectSkillNumber = true;
+      expectTacticNumber = false;
+      battleSkillsEl.style.border = "1.5px solid #2263ad";
+      battleTacticsEl.style.border = "none";
+    }
+    if (k === 'f') {
+      expectTacticNumber = true;
+      expectSkillNumber = false;
+      battleTacticsEl.style.border = "1.5px solid #2263ad";
+      battleSkillsEl.style.border = "none";
+    }
     if (expectSkillNumber && /^[1-9]$/.test(e.key)) {
       const i = parseInt(e.key) - 1;
       const shown = getShownBattleSkills();
@@ -408,12 +417,6 @@
     }
   });
   window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
-
-  function flashHint(text) {
-    const prev = turnIndicatorEl.textContent;
-    turnIndicatorEl.textContent = text;
-    setTimeout(() => { if (turnIndicatorEl.textContent === text) turnIndicatorEl.textContent = prev; }, 1200);
-  }
 
   // ---- Messages ----
   function showMessage(htmlText, type = 'info', timeout = 3000) {
@@ -432,7 +435,6 @@
 
   // ---- UI helpers ----
 
-  // Only show skills/tactics owned on start screen
   function renderStartUI() {
     startHealthEl.textContent = saveState.maxHealth;
     startDiamondsEl.textContent = saveState.diamonds;
@@ -477,10 +479,10 @@
 
   function getShownBattleSkills() {
     // maintain original order but filter to what is available this battle
-    return saveState.skillOrder.filter(k => (battleOwnedSkills[k] && battleOwnedSkills[k] !== 0) || battleOwnedSkills[k] === Infinity);
+    return saveState.skillOrder.filter(k => (battlePlayerSkills[k] && battlePlayerSkills[k] !== 0) || battlePlayerSkills[k] === Infinity);
   }
   function getShownBattleTactics() {
-    return saveState.tacticOrder.filter(k => (battleOwnedTactics[k] && battleOwnedTactics[k] !== 0));
+    return saveState.tacticOrder.filter(k => (battlePlayerTactics[k] && battlePlayerTactics[k] !== 0));
   }
 
   function renderBattleUI() {
@@ -488,11 +490,14 @@
     playerHpFill.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
     opponentHpFill.style.width = `${Math.max(0, (opponent.hp / opponent.maxHp) * 100)}%`;
 
+    if (playerHealthText) playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+    if (opponentHealthText) opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
+
     battleSkillsEl.innerHTML = "";
     const shownSkills = getShownBattleSkills();
     shownSkills.forEach((k, idx) => {
       const s = SKILLS[k];
-      const count = battleOwnedSkills[k] === Infinity ? "∞" : (battleOwnedSkills[k] || 0);
+      const count = battlePlayerSkills[k] === Infinity ? "∞" : (battlePlayerSkills[k] || 0);
       const btn = document.createElement('div');
       btn.className = 'skill-btn';
       btn.dataset.name = k;
@@ -509,7 +514,7 @@
     const shownTactics = getShownBattleTactics();
     shownTactics.forEach((k, idx) => {
       const t = TACTICS[k];
-      const count = battleOwnedTactics[k] || 0;
+      const count = battlePlayerTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
       btn.dataset.name = k;
@@ -630,7 +635,7 @@
     saveState.maxHealth += 5;
     save(saveState);
     renderShopUI(); renderStartUI();
-    showMessage("Bought 5 health.", 'success');
+    showMessage(`Bought 5 health. You have ${saveState.maxHealth} health now.`, 'success');
   });
 
   // ---- Battle lifecycle ----
@@ -645,15 +650,18 @@
     opponent.lastPostChase = 0;
 
     // prepare battle owned counts per battle
-    battleOwnedSkills = {};
-    battleOwnedTactics = {};
+    battlePlayerSkills = {}; battlePlayerTactics = {};
+    battleOppSkills = {}; battleOppTactics = {};
     Object.keys(SKILLS).forEach(k => {
       const owned = saveState.ownedSkills[k];
-      if (owned === Infinity) battleOwnedSkills[k] = Infinity;
-      else battleOwnedSkills[k] = owned || 0;
+      if (owned === Infinity) battlePlayerSkills[k] = Infinity;
+      else battlePlayerSkills[k] = owned || 0;
+      if (owned === Infinity) battleOppSkills[k] = Infinity;
+      else battleOppSkills[k] = owned || 0;
     });
     Object.keys(TACTICS).forEach(k => {
-      battleOwnedTactics[k] = saveState.ownedTactics[k] || 0;
+      battlePlayerTactics[k] = saveState.ownedTactics[k] || 0;
+      battleOppTactics[k] = saveState.ownedTactics[k] || 0;
     });
 
     renderBattleUI();
@@ -687,17 +695,14 @@
     showBattle();
     prepareBattle();
   });
-
   btnShop.addEventListener('click', () => {
     showShop();
     renderShopUI();
   });
-
   btnSurrender.addEventListener('click', () => {
     if (!state.battle) return;
     finalizeEndBattle(false, "You surrendered.");
   });
-
   btnReset.addEventListener('click', () => {
     if (!confirm("Reset all progress?")) return;
     localStorage.removeItem(storageKey);
@@ -705,7 +710,6 @@
     renderStartUI();
     showMessage("Progress reset.", 'info');
   });
-
   btnShopBack.addEventListener('click', () => {
     showStart();
   });
@@ -812,7 +816,7 @@
     handleHazards(player, dt);
     handleHazards(opponent, dt);
 
-    // check falling into void -> trigger emptying animation before finalizing
+    // check falling into void
     if (isVoidAt(player.x, player.y)) {
       // animate player hp bar empty then finalize
       player.hp = 0;
@@ -848,10 +852,7 @@
         state.battle.turnEndTime = now + state.battle.turnTimeout;
         updateTurnIndicator();
       } else {
-        if (state.battle.turnEndTime && now > state.battle.turnEndTime) {
-          flashHint("Turn timed out.");
-          switchTurn();
-        }
+        if (state.battle.turnEndTime && now > state.battle.turnEndTime) switchTurn();
       }
       updateTurnIndicator();
     }
@@ -859,6 +860,8 @@
     // update hp bars
     playerHpFill.style.width = `${(player.hp / player.maxHp) * 100}%`;
     opponentHpFill.style.width = `${(opponent.hp / opponent.maxHp) * 100}%`;
+    if (playerHealthText) playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+    if (opponentHealthText) opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
   }
 
   function applyMovement(actor, dt) {
@@ -867,7 +870,7 @@
     if (tileUnder === 3) factor = 0.6;
     if (tileUnder === 6) factor = 0.5;
 
-    // Store original position for collision checking
+    // Original position
     const originalX = actor.x;
     const originalY = actor.y;
 
@@ -891,7 +894,6 @@
       if (tileAt(actor.x, actor.y) === 2) {
         actor.y = originalY;
       }
-
       // Stop if still blocked
       if (tileAt(actor.x, actor.y) === 2) {
         actor.x = originalX;
@@ -913,7 +915,7 @@
       if (now - actor.lastLavaTick >= LAVA_TICK_INTERVAL) {
         actor.applyDamage(LAVA_DAMAGE);
         actor.lastLavaTick = now;
-        if (actor === player) showMessage("Sizzling in lava! -10", 'warn');
+        if (actor === player) showMessage("Sizzling in lava!", 'warn');
       }
     } else {
       actor.lastLavaTick = 0;
@@ -1011,7 +1013,6 @@
     ctx.moveTo(x, y - size / 2);
     ctx.lineTo(x, y + size / 4);
     ctx.stroke();
-
     // arrow head
     ctx.beginPath();
     ctx.moveTo(x - size / 4, y);
@@ -1025,16 +1026,16 @@
   // ---- Skill & tactic usage ----
   function useSkillByName(name) {
     if (!state.battle) return;
-    if (Date.now() < state.battle.startPeriodEnd) { flashHint("Cannot use skills during starting period."); return; }
-    if (state.battle.currentActor !== 'player') { flashHint("Not your turn."); return; }
-    if (!battleOwnedSkills[name] || (battleOwnedSkills[name] <= 0 && battleOwnedSkills[name] !== Infinity)) {
+    if (Date.now() < state.battle.startPeriodEnd) return;
+    if (state.battle.currentActor !== 'player') return;
+    if (!battlePlayerSkills[name] || (battlePlayerSkills[name] <= 0 && battlePlayerSkills[name] !== Infinity)) {
       showMessage(`No <strong>${name}</strong> left!`, 'warn');
       return;
     }
 
     const skill = SKILLS[name];
     const attackVal = getSkillAttackValue(name, player);
-    if (isSkillInRangeAndLOS(player, opponent, name) && (Math.random() < (skill.acc || 1))) {
+    if (inRangeAndLOS(player, opponent) && (Math.random() < (skill.acc || 1))) {
       opponent.applyDamage(attackVal);
       showMessage(`You used <strong>${name}</strong>! Opponent loses ${attackVal} HP.`, 'info');
       animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
@@ -1042,34 +1043,37 @@
       showMessage(`You used <strong>${name}</strong>! Missed!`, 'warn');
     }
 
-    if (battleOwnedSkills[name] !== Infinity) {
-      battleOwnedSkills[name] = Math.max(0, (battleOwnedSkills[name] || 0) - 1);
-      if (battleOwnedSkills[name] === 0) showMessage(`You have no <strong>${name}</strong> left.`, 'warn');
+    if (battlePlayerSkills[name] !== Infinity) {
+      battlePlayerSkills[name] = Math.max(0, (battlePlayerSkills[name] || 0) - 1);
+      if (battlePlayerSkills[name] === 0) showMessage(`You have no <strong>${name}</strong> left.`, 'warn');
     }
-    // refresh UI skill counts
-    renderBattleUI();
+    renderBattleUI(); // refresh UI skill counts
 
     nextTurnAfterAction('player');
   }
 
   function useTacticByName(name) {
     if (!state.battle) return;
-    if (Date.now() < state.battle.startPeriodEnd) { flashHint("Cannot use tactics during starting period."); return; }
-    if (state.battle.currentActor !== 'player') { flashHint("Not your turn."); return; }
-    if (!battleOwnedTactics[name] || battleOwnedTactics[name] <= 0) { flashHint("No uses left for this battle."); return; }
+    if (Date.now() < state.battle.startPeriodEnd) return;
+    if (state.battle.currentActor !== 'player') return;
+    if (!battlePlayerTactics[name] || battlePlayerTactics[name] <= 0) return;
 
     if (name === "Dizzydizzy") {
       player.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
       showMessage(`You used <strong>${name}</strong>! 2 extra turns.`, 'info');
     } else if (name === "Pushie") {
-      applyPush(opponent, player);
+      applyPush(opponent);
       showMessage(`You used <strong>${name}</strong>! Opponent was pushed.`, 'info');
     } else if (name === "Speed") {
       player.applyEffect('speed', Date.now() + 10000);
       showMessage(`You used <strong>${name}</strong>! Speed up 10s.`, 'info');
     }
-    battleOwnedTactics[name] = Math.max(0, battleOwnedTactics[name] - 1);
+
+    battlePlayerTactics[name] = Math.max(0, battlePlayerTactics[name] - 1);
+    if (battlePlayerTactics[name] === 0) showMessage(`You have no <strong>${name}</strong> left.`, 'warn');
+    renderBattleUI(); // refresh UI tactic counts
+
     nextTurnAfterAction('player');
   }
 
@@ -1116,12 +1120,11 @@
   }
 
   function animateHPChange(el, pct) {
-    // temporarily lengthen transition for emptying animation
-    el.style.transition = 'width 700ms ease';
-    el.style.width = `${pct}%`;
-    setTimeout(() => {
+    if (pct === 0)
+      el.style.transition = 'width 700ms ease';
+    else
       el.style.transition = 'width 400ms ease';
-    }, 750);
+    el.style.width = `${pct}%`;
   }
 
   // ---- Opponent AI ----
@@ -1129,7 +1132,7 @@
     if (!state.battle) return;
     if (state.battle.currentActor !== 'opponent') return;
 
-    const delay = 200 + Math.random() * 800;
+    const delay = 400 + Math.random() * 800;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1141,28 +1144,28 @@
         const safe = findNearbySafePosition(opponent);
         if (safe) {
           moveTowards(opponent, safe.x, safe.y);
-          setTimeout(() => switchTurn(), 600);
+          setTimeout(() => {
+            if (state.battle.currentActor === 'opponent') switchTurn();
+          }, 600);
           return;
         }
       }
 
-      // gather available skills/tactics
-      const candidates = Object.keys(SKILLS).filter(k => (battleOwnedSkills[k] && battleOwnedSkills[k] !== 0) || battleOwnedSkills[k] === Infinity);
-      const tacticCandidates = Object.keys(TACTICS).filter(k => (battleOwnedTactics[k] && battleOwnedTactics[k] > 0));
+      const candidates = Object.keys(SKILLS).filter(k => (battleOppSkills[k] && battleOppSkills[k] !== 0) || battleOppSkills[k] === Infinity);
+      const tacticCandidates = Object.keys(TACTICS).filter(k => (battleOppTactics[k] && battleOppTactics[k] > 0));
 
-      // attempt instant finisher (only if LOS/range)
+      // try to find instant finisher
       for (const k of candidates) {
         const s = SKILLS[k];
         let attack = s.attack;
         if (k === "Minitrident" && tileAt(opponent.x, opponent.y) === 3) attack += 30;
-        if (attack >= player.hp && isSkillInRangeAndLOS(opponent, player, k) && Math.random() < (s.acc || 1)) {
-          // resolve directly (resolver will show single message)
+        if (attack >= player.hp && Math.random() < (s.acc || 1)) {
           resolveOpponentSkill(k);
           return;
         }
       }
 
-      // tactic logic: Pushie if player near edge
+      // tactics
       if (tacticCandidates.includes("Pushie")) {
         const distToEdge = distanceToNearestEdge(player.x, player.y);
         if (distToEdge < 180 && Math.random() < 0.8) {
@@ -1189,41 +1192,17 @@
         if (expected > bestVal) { bestVal = expected; bestSkill = k; }
       }
 
-      if (bestSkill) {
-        // if in range & LOS -> use immediately; resolver posts outcome
-        if (isSkillInRangeAndLOS(opponent, player, bestSkill)) {
-          resolveOpponentSkill(bestSkill);
-          return;
-        } else {
-          // move along a path to get closer, then attempt skill after moving a bit
-          const safeTarget = findNearbySafePositionTowards(player.x, player.y) || { x: player.x, y: player.y };
-          moveTowards(opponent, safeTarget.x, safeTarget.y);
-          // small delay to allow movement/animation before using skill
-          setTimeout(() => {
-            if (state.battle && state.battle.currentActor === 'opponent') {
-              // check again LOS/range; if still not in range, switch turn
-              if (isSkillInRangeAndLOS(opponent, player, bestSkill)) resolveOpponentSkill(bestSkill);
-            }
-          }, 650 + Math.random() * 250);
-          return;
-        }
-      }
+      if (bestSkill) resolveOpponentSkill(bestSkill);
 
-      // fallback: reposition or wander
-      if (Math.random() < 0.6) {
-        const path = findPath(opponent.x, opponent.y, player.x, player.y);
-        if (path) followPath(opponent, path);
-        else moveTowards(opponent, player.x, player.y);
-      } else {
-        wander(opponent);
-      }
-      setTimeout(() => switchTurn(), 800 + Math.random() * 600);
+      setTimeout(() => {
+        if (state.battle.currentActor === 'opponent') switchTurn();
+      }, 800 + Math.random() * 600);
     }, delay);
   }
 
-  function isSkillInRangeAndLOS(actorA, actorB, skillName) {
-    const s = SKILLS[skillName];
-    const dx = actorB.x - actorA.x; const dy = actorB.y - actorA.y;
+  function inRangeAndLOS(actorA, actorB) {
+    const dx = actorB.x - actorA.x;
+    const dy = actorB.y - actorA.y;
     const dist = Math.hypot(dx, dy);
     const maxRange = 380;
     if (dist > maxRange) return false;
@@ -1237,55 +1216,56 @@
   }
 
   function hasLineOfSight(actorA, actorB) {
-    const dx = actorB.x - actorA.x; const dy = actorB.y - actorA.y;
+    const dx = actorB.x - actorA.x;
+    const dy = actorB.y - actorA.y;
     const dist = Math.hypot(dx, dy);
     const steps = Math.ceil(dist / 8) || 1;
     for (let i = 1; i < steps; i++) {
       const sx = actorA.x + (dx * (i / steps));
       const sy = actorA.y + (dy * (i / steps));
-      if (tileAt(sx, sy) === 2) return false; // blocked by wall
+      if (tileAt(sx, sy) === 2) return false;
     }
     return true;
   }
 
   function resolveOpponentSkill(name) {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
-    if (!battleOwnedSkills[name] || (battleOwnedSkills[name] <= 0 && battleOwnedSkills[name] !== Infinity)) {
+    if (!battleOppSkills[name] || (battleOppSkills[name] <= 0 && battleOppSkills[name] !== Infinity)) {
       switchTurn();
       return;
     }
     const skill = SKILLS[name];
     const attackVal = getSkillAttackValue(name, opponent);
-    if (isSkillInRangeAndLOS(opponent, player, name) && (Math.random() < (skill.acc || 1))) {
+    if (Math.random() < (skill.acc || 1)) {
       player.applyDamage(attackVal);
       showMessage(`Opponent used <strong>${name}</strong>! You lose ${attackVal} HP.`, 'error');
       animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
     } else {
       showMessage(`Opponent used <strong>${name}</strong>! Missed!`, 'info');
     }
-    if (battleOwnedSkills[name] !== Infinity) battleOwnedSkills[name] = Math.max(0, battleOwnedSkills[name] - 1);
+    if (battleOppSkills[name] !== Infinity) battleOppSkills[name] = Math.max(0, battleOppSkills[name] - 1);
     nextTurnAfterAction('opponent');
   }
 
   function applyTacticOpponent(name) {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
-    if (!battleOwnedTactics[name] || battleOwnedTactics[name] <= 0) { switchTurn(); return; }
+    // check opponent-specific tactic counts
+    if (!battleOppTactics[name] || battleOppTactics[name] <= 0) { switchTurn(); return; }
     if (name === "Dizzydizzy") {
       opponent.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
       showMessage("Opponent used <strong>Dizzydizzy</strong>! They gain 2 extra turns.", 'warn');
     } else if (name === "Pushie") {
-      applyPush(player, opponent);
+      applyPush(player);
       showMessage("Opponent used <strong>Pushie</strong>! You were pushed.", 'warn');
     } else if (name === "Speed") {
       opponent.applyEffect('speed', Date.now() + 10000);
       showMessage("Opponent used <strong>Speed</strong>! Opponent speed +50% for 10s.", 'warn');
     }
-    battleOwnedTactics[name] = Math.max(0, battleOwnedTactics[name] - 1);
+    battleOppTactics[name] = Math.max(0, battleOppTactics[name] - 1);
     nextTurnAfterAction('opponent');
   }
 
-  // helper: find safe nearby tile
   function findNearbySafePosition(actor) {
     const steps = 6;
     for (let r = -steps; r <= steps; r++) {
@@ -1299,25 +1279,13 @@
     }
     return null;
   }
-  function findNearbySafePositionTowards(tx, ty) {
-    // biased toward (tx,ty)
-    const dirX = Math.sign(tx - opponent.x), dirY = Math.sign(ty - opponent.y);
-    for (let step = 1; step <= 6; step++) {
-      const nx = opponent.x + dirX * step * TILE * 0.8;
-      const ny = opponent.y + dirY * step * TILE * 0.8;
-      if (nx < 10 || ny < 10 || nx > canvas.width - 10 || ny > canvas.height - 10) continue;
-      const t = tileAt(nx, ny);
-      if (t === 1 || t === 6) return { x: nx, y: ny };
-    }
-    return null;
-  }
 
   function distanceToNearestEdge(x, y) {
     const d1 = x; const d2 = canvas.width - x; const d3 = y; const d4 = canvas.height - y;
     return Math.min(d1, d2, d3, d4);
   }
 
-  function applyPush(target, from) {
+  function applyPush(target) {
     const edges = [
       { x: 10, y: target.y },
       { x: canvas.width - 10, y: target.y },
@@ -1329,50 +1297,34 @@
       const d = Math.hypot(e.x - target.x, e.y - target.y);
       if (d < bd) { bd = d; best = e; }
     }
-    const pushDist = Math.min(200, bd);
+    const pushDist = Math.min(110, bd);
     const ang = Math.atan2(best.y - target.y, best.x - target.x);
     target.x += Math.cos(ang) * pushDist;
     target.y += Math.sin(ang) * pushDist;
   }
 
   function moveTowards(actor, tx, ty) {
-    // if it's opponent, try to pathfind to the target tile
-    if (actor === opponent) {
-      const path = findPath(actor.x, actor.y, tx, ty);
-      if (path && path.length > 1) {
-        followPath(actor, path);
-        return;
-      }
-      // fallback: direct chase if no path
-      const dx = tx - actor.x; const dy = ty - actor.y;
-      const mag = Math.hypot(dx, dy) || 1;
-      actor.vx = (dx / mag) * actor.speed;
-      actor.vy = (dy / mag) * actor.speed;
+    const path = findPath(actor.x, actor.y, tx, ty);
+    if (path && path.length > 1) {
+      followPath(actor, path);
       return;
     }
-    // player or others: naive direct
+    // fallback: direct chase if no path
     const dx = tx - actor.x; const dy = ty - actor.y;
     const mag = Math.hypot(dx, dy) || 1;
     actor.vx = (dx / mag) * actor.speed;
     actor.vy = (dy / mag) * actor.speed;
   }
 
-  function wander(actor) {
-    const ang = Math.random() * Math.PI * 2;
-    actor.vx = Math.cos(ang) * (actor.speed * 0.6);
-    actor.vy = Math.sin(ang) * (actor.speed * 0.6);
-  }
-
-  // pathfind to a tile that increases distance
   function moveAway(actor, fromX, fromY) {
-    // sample candidate targets in a circle; prefer farthest walkable safe tile
+    // sample candidate targets in a circle
     let best = null; let bestDist = -Infinity;
     for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
       const tx = actor.x + Math.cos(angle) * TILE * 3;
       const ty = actor.y + Math.sin(angle) * TILE * 3;
       if (tx < 10 || ty < 10 || tx > canvas.width - 10 || ty > canvas.height - 10) continue;
       const t = tileAt(tx, ty);
-      if (t === 0 || t === 2 || t === 4) continue; // avoid void, walls, and lava as targets
+      if (t === 0 || t === 2 || t === 4) continue;
       const d = Math.hypot(tx - fromX, ty - fromY);
       if (d > bestDist) { bestDist = d; best = { x: tx, y: ty }; }
     }
@@ -1384,37 +1336,34 @@
       const mag = Math.hypot(dx, dy) || 1;
       actor.vx = (dx / mag) * actor.speed;
       actor.vy = (dy / mag) * actor.speed;
-      return;
+    } else {
+      // wander: final fallback
+      const ang = Math.random() * Math.PI * 2;
+      actor.vx = Math.cos(ang) * (actor.speed * 0.6);
+      actor.vy = Math.sin(ang) * (actor.speed * 0.6);
     }
-    // final fallback: wander
-    wander(actor);
   }
 
   // End battle
   function finalizeEndBattle(playerWon, message) {
     if (!state.battle) return;
     state.battle.battleOver = true;
-    const awarded = playerWon ? computeReward() : 0;
+    let awarded = 0;
     if (playerWon) {
+      // calculate reward
+      let totalAttack = 0;
+      Object.keys(SKILLS).forEach(k => {
+        const s = SKILLS[k];
+        if (saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0)
+          totalAttack += s.attack;
+      });
+      awarded = 1 + Math.floor(totalAttack / 50) + Math.floor(saveState.maxHealth / 10);
       saveState.diamonds = (saveState.diamonds || 0) + awarded;
       save(saveState);
     }
     showMessage((playerWon ? "You win! " : "You lose. ") + message + (playerWon ? ` Diamonds earned: ${awarded}` : ""), playerWon ? 'success' : 'error');
     showStart();
     renderStartUI();
-  }
-
-  // compute reward
-  function computeReward() {
-    let totalAttack = 0;
-    Object.keys(SKILLS).forEach(k => {
-      const s = SKILLS[k];
-      if (saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0) {
-        totalAttack += s.attack;
-      }
-    });
-    const reward = 1 + Math.floor(totalAttack / 50) + Math.floor(saveState.maxHealth / 10);
-    return Math.max(1, reward);
   }
 
   // ---- UI / interactions ----
@@ -1424,7 +1373,6 @@
   }
   setupUI();
 
-  // remove the broken wrapper recursion: expose functions directly
   window.useSkillByName = useSkillByName;
   window.useTacticByName = useTacticByName;
 
