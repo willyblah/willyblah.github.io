@@ -1039,7 +1039,7 @@
       showMessage(`You used <strong>${name}</strong>! Opponent loses ${attackVal} HP.`, 'info');
       animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
     } else if (!inRangeAndLOS(player, opponent)) {
-      showMessage(`You used <strong>${name}</strong>! Out of range or blocked by wall.`, 'warn');
+      showMessage(`You used <strong>${name}</strong>! Too far or blocked by wall.`, 'warn');
     } else {
       showMessage(`You used <strong>${name}</strong>! Missed!`, 'warn');
     }
@@ -1347,6 +1347,7 @@
   // End battle
   function finalizeEndBattle(playerWon, message) {
     if (!state.battle) return;
+    if (state.battle.battleOver) return;
     state.battle.battleOver = true;
     let awarded = 0;
     if (playerWon) {
