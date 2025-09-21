@@ -5,8 +5,8 @@
 
   // ---- Game data definitions ----
   const SKILLS = {
-    Spear: { attack: 5, acc: 0.5, price: 0, default: true, infinite: true, desc: "Attack 5, 50% accuracy. Infinite." },
-    Knife: { attack: 2, acc: 0.8, price: 0, default: true, infinite: true, desc: "Attack 2, 80% accuracy. Infinite." },
+    Spear: { attack: 5, acc: 0.5, price: 0, default: true, infinite: true, desc: "Attack 5, 50% accuracy." },
+    Knife: { attack: 2, acc: 0.8, price: 0, default: true, infinite: true, desc: "Attack 2, 80% accuracy." },
     Multiknife: { attack: 10, acc: 0.8, price: 2, desc: "Attack 10, 80% accuracy." },
     Multispear: { attack: 20, acc: 0.8, price: 4, desc: "Attack 20, 80% accuracy." },
     "Stone Sword": { attack: 30, acc: 1, price: 6, desc: "Attack 30, 100% accuracy." },
@@ -143,23 +143,23 @@
       }
     }
 
-    // keep spawn-ish corners valid
+    // keep spawn corners valid
     grid[oy + 1][ox + 1] = 1;
     grid[oy + islandH - 2][ox + islandW - 2] = 1;
 
-    // more rocks/walls
+    // walls (obstacles)
     for (let i = 0; i < 60; i++) {
       const r = oy + 1 + Math.floor(Math.random() * (islandH - 2));
       const c = ox + 1 + Math.floor(Math.random() * (islandW - 2));
-      if (Math.random() < 0.28) grid[r][c] = 2; // wall/obstacle
+      if (Math.random() < 0.28) grid[r][c] = 2;
     }
-    // water patches (slows)
+    // water
     for (let i = 0; i < 18; i++) {
       const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
       const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
       if (grid[r][c] === 1 && Math.random() < 0.5) grid[r][c] = 3;
     }
-    // lava (danger)
+    // lava
     for (let i = 0; i < 12; i++) {
       const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
       const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
@@ -177,7 +177,7 @@
       const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
       if (grid[r][c] === 1 && Math.random() < 0.3) grid[r][c] = 6;
     }
-    // some holes
+    // holes
     for (let i = 0; i < 18; i++) {
       const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
       const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
@@ -191,7 +191,7 @@
     return r >= 0 && r < MAP_H && c >= 0 && c < MAP_W;
   }
 
-  // walkable: all non-wall, non-void tiles are walkable
+  // all non-wall, non-void tiles are walkable
   function walkableTile(r, c) {
     if (!inBounds(r, c)) return false;
     const t = grid[r][c];
@@ -209,10 +209,10 @@
     switch (t) {
       case 1: return 1.0;   // land
       case 3: return 1.2;   // water (slightly slower)
-      case 4: return 8.0;   // lava (very costly, AI will avoid unless necessary)
+      case 4: return 8.0;   // lava (very costly, avoid unless necessary)
       case 5: return 4.0;   // cactus (costly but less than lava)
       case 6: return 1.5;   // cobweb (slower)
-      default: return 9999; // void / wall (shouldn't be walkable)
+      default: return 9999; // void / wall (not walkable)
     }
   }
 
@@ -225,7 +225,6 @@
     return minTileCost * (D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy));
   }
 
-  // Helper to compute effective attack value (handles Minitrident water bonus)
   function getSkillAttackValue(name, actor) {
     const s = SKILLS[name];
     if (!s) return 0;
@@ -393,8 +392,6 @@
 
     keysDown[k] = true; // movement keys state
 
-    // ignore shortcuts while typing in inputs
-    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
     if (k === 'e') { expectSkillNumber = true; expectTacticNumber = false; flashHint('Select skill: press 1-9'); }
     if (k === 'f') { expectTacticNumber = true; expectSkillNumber = false; flashHint('Select tactic: press 1-9'); }
     if (expectSkillNumber && /^[1-9]$/.test(e.key)) {
@@ -848,7 +845,7 @@
       updateTurnIndicator();
     }
 
-    // update hp bars (smooth)
+    // update hp bars
     playerHpFill.style.width = `${(player.hp / player.maxHp) * 100}%`;
     opponentHpFill.style.width = `${(opponent.hp / opponent.maxHp) * 100}%`;
   }
@@ -878,7 +875,6 @@
       if (tileAt(actor.x, actor.y) === 2) {
         actor.x = originalX;
       }
-
       // Try Y movement only  
       actor.y += actor.vy * dt * factor;
       if (tileAt(actor.x, actor.y) === 2) {
@@ -908,7 +904,9 @@
         actor.lastLavaTick = now;
         if (actor === player) showMessage("Sizzling in lava! -10", 'warn');
       }
-    } else { actor.lastLavaTick = 0; }
+    } else {
+      actor.lastLavaTick = 0;
+    }
     if (tile === 5) {
       if (!actor.lastCactusTick) actor.lastCactusTick = now;
       if (now - actor.lastCactusTick >= CACTUS_TICK_INTERVAL) {
@@ -916,7 +914,9 @@
         actor.lastCactusTick = now;
         if (actor === player) showMessage("Pricked by cactus!", 'warn');
       }
-    } else { actor.lastCactusTick = 0; }
+    } else {
+      actor.lastCactusTick = 0;
+    }
   }
 
   function tileAt(x, y) {
@@ -956,10 +956,10 @@
         } else if (t === 6) {
           ctx.fillStyle = '#8fb8c6'; ctx.fillRect(x, y, TILE, TILE);
           ctx.fillStyle = '#ffffff';
-          ctx.font = `${TILE * 0.5}px Inter`;
+          ctx.font = `${TILE}px Inter`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 2);
+          ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 10);
         }
         ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.strokeRect(x, y, TILE, TILE);
       }
@@ -1001,7 +1001,7 @@
     ctx.lineTo(x, y + size / 4);
     ctx.stroke();
 
-    // arrow head (pointing down)
+    // arrow head
     ctx.beginPath();
     ctx.moveTo(x - size / 4, y);
     ctx.lineTo(x, y + size / 2);
@@ -1011,7 +1011,7 @@
     ctx.restore();
   }
 
-  // ---- Skill & tactic usage (fixed recursion) ----
+  // ---- Skill & tactic usage ----
   function useSkillByName(name) {
     if (!state.battle) return;
     if (Date.now() < state.battle.startPeriodEnd) { flashHint("Cannot use skills during starting period."); return; }
@@ -1050,7 +1050,7 @@
     if (name === "Dizzydizzy") {
       player.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
-      showMessage(`You used <strong>${name}</strong>! +2 extra turns.`, 'info');
+      showMessage(`You used <strong>${name}</strong>! 2 extra turns.`, 'info');
     } else if (name === "Pushie") {
       applyPush(opponent, player);
       showMessage(`You used <strong>${name}</strong>! Opponent was pushed.`, 'info');
@@ -1128,7 +1128,11 @@
       const tileHere = tileAt(opponent.x, opponent.y);
       if (tileHere === 4 || tileHere === 5) {
         const safe = findNearbySafePosition(opponent);
-        if (safe) { moveTowards(opponent, safe.x, safe.y); setTimeout(() => switchTurn(), 600); return; }
+        if (safe) {
+          moveTowards(opponent, safe.x, safe.y);
+          setTimeout(() => switchTurn(), 600);
+          return;
+        }
       }
 
       // gather available skills/tactics
@@ -1159,7 +1163,7 @@
         applyTacticOpponent("Dizzydizzy");
         return;
       }
-      if (tacticCandidates.includes("Speed") && opponent.hp < opponent.maxHp * 0.4 && Math.random() < 0.5) {
+      if (tacticCandidates.includes("Speed") && opponent.hp <= opponent.maxHp * 0.6 && Math.random() < 0.5) {
         applyTacticOpponent("Speed");
         return;
       }
@@ -1224,7 +1228,10 @@
 
   function resolveOpponentSkill(name) {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
-    if (!battleOwnedSkills[name] || (battleOwnedSkills[name] <= 0 && battleOwnedSkills[name] !== Infinity)) { switchTurn(); return; }
+    if (!battleOwnedSkills[name] || (battleOwnedSkills[name] <= 0 && battleOwnedSkills[name] !== Infinity)) {
+      switchTurn();
+      return;
+    }
     const skill = SKILLS[name];
     const attackVal = getSkillAttackValue(name, opponent);
     if (isSkillInRangeAndLOS(opponent, player, name) && (Math.random() < (skill.acc || 1))) {
@@ -1244,7 +1251,7 @@
     if (name === "Dizzydizzy") {
       opponent.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
-      showMessage("Opponent used <strong>Dizzydizzy</strong>! They gain +2 extra turns.", 'warn');
+      showMessage("Opponent used <strong>Dizzydizzy</strong>! They gain 2 extra turns.", 'warn');
     } else if (name === "Pushie") {
       applyPush(player, opponent);
       showMessage("Opponent used <strong>Pushie</strong>! You were pushed.", 'warn');
@@ -1256,7 +1263,7 @@
     nextTurnAfterAction('opponent');
   }
 
-  // helper: find safe nearby tile (not lava/void)
+  // helper: find safe nearby tile
   function findNearbySafePosition(actor) {
     const steps = 6;
     for (let r = -steps; r <= steps; r++) {
@@ -1307,7 +1314,7 @@
   }
 
   function moveTowards(actor, tx, ty) {
-    // if it's opponent, try to pathfind to the target tile (avoid walls)
+    // if it's opponent, try to pathfind to the target tile
     if (actor === opponent) {
       const path = findPath(actor.x, actor.y, tx, ty);
       if (path && path.length > 1) {
