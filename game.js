@@ -1346,8 +1346,7 @@
 
   // End battle
   function finalizeEndBattle(playerWon, message) {
-    if (!state.battle) return;
-    if (state.battle.battleOver) return;
+    if (!state.battle || state.battle.battleOver) return;
     state.battle.battleOver = true;
     let awarded = 0;
     if (playerWon) {
