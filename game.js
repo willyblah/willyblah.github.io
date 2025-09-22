@@ -877,23 +877,35 @@
     actor.x += actor.vx * dt * factor;
     actor.y += actor.vy * dt * factor;
 
+    // Prevent corner-cutting
+    const oldC = Math.floor(originalX / TILE), oldR = Math.floor(originalY / TILE);
+    const newC = Math.floor(actor.x / TILE), newR = Math.floor(actor.y / TILE);
+    if (newR !== oldR && newC !== oldC) {
+      if ((!inBounds(oldR, newC) || grid[oldR][newC] === 2) && (!inBounds(newR, oldC) || grid[newR][oldC] === 2)) {
+        // revert and stop movement
+        actor.x = originalX;
+        actor.y = originalY;
+        actor.vx = 0;
+        actor.vy = 0;
+        return;
+      }
+    }
+
     // Check if we moved into a wall
-    const newTile = tileAt(actor.x, actor.y);
-    if (newTile === 2) {
+    if (tileAt(actor.x, actor.y) === 2) {
       // Revert position
       actor.x = originalX;
       actor.y = originalY;
 
       // Try X movement only
       actor.x += actor.vx * dt * factor;
-      if (tileAt(actor.x, actor.y) === 2) {
+      if (tileAt(actor.x, actor.y) === 2)
         actor.x = originalX;
-      }
-      // Try Y movement only  
+      // Try Y movement only
       actor.y += actor.vy * dt * factor;
-      if (tileAt(actor.x, actor.y) === 2) {
+      if (tileAt(actor.x, actor.y) === 2)
         actor.y = originalY;
-      }
+
       // Stop if still blocked
       if (tileAt(actor.x, actor.y) === 2) {
         actor.x = originalX;
@@ -972,7 +984,7 @@
           ctx.font = `${TILE}px Inter`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 10);
+          ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 8);
         }
         ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.strokeRect(x, y, TILE, TILE);
       }
@@ -1143,13 +1155,7 @@
       const tileHere = tileAt(opponent.x, opponent.y);
       if (tileHere === 4 || tileHere === 5) {
         const safe = findNearbySafePosition(opponent);
-        if (safe) {
-          moveTowards(opponent, safe.x, safe.y);
-          setTimeout(() => {
-            if (state.battle.currentActor === 'opponent') switchTurn();
-          }, 600);
-          return;
-        }
+        if (safe) moveTowards(opponent, safe.x, safe.y);
       }
 
       const candidates = Object.keys(SKILLS).filter(k => (battleOppSkills[k] && battleOppSkills[k] !== 0) || battleOppSkills[k] === Infinity);
