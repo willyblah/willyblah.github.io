@@ -12,10 +12,15 @@
     Kick: { attack: 50, acc: 0.8, price: 9, desc: "Attack 50, 80% accuracy." },
     Minibomb: { attack: 60, acc: 1, price: 11, desc: "Attack 60, 100% accuracy." },
     Flame: { attack: 80, acc: 1, price: 15, desc: "Attack 80, 100% accuracy." },
-    Oneskill: { attack: 100, acc: 0.8, price: 25, desc: "Attack 100, 80% accuracy." },
-    Minitrident: { attack: 120, acc: 1, price: 24, desc: "Attack 120, 100% accuracy. +30 attack if used in water." },
+    Oneskill: { attack: 100, acc: 0.8, price: 18, desc: "Attack 100, 80% accuracy." },
+    Minitrident: { attack: 120, acc: 1, price: 23, desc: "Attack 120, 100% accuracy. +30 attack if used in water." },
     Fireball: { attack: 150, acc: 1, price: 28, desc: "Attack 150, 100% accuracy." },
-    "Iron Sword": { attack: 200, acc: 1, price: 38, desc: "Attack 200, 100% accuracy." }
+    "Iron Sword": { attack: 200, acc: 1, price: 38, desc: "Attack 200, 100% accuracy." },
+    Bombie: { attack: 250, acc: 1, price: 48, desc: "Attack 250, 100% accuracy." },
+    Punchie: { attack: 300, acc: 1, price: 57, desc: "Attack 300, 100% accuracy." },
+    Rage: { attack: 350, acc: 1, price: 74, desc: "Attack 350, 100% accuracy. +50 attack if used on cactus." },
+    Blast: { attack: 400, acc: 0.8, price: 77, desc: "Attack 400, 80% accuracy." },
+    MillionSkills: { attack: 500, acc: 1, price: 96, desc: "Attack 500, 100% accuracy." }
   };
 
   const TACTICS = {
@@ -227,7 +232,9 @@
     const s = SKILLS[name];
     if (!s) return 0;
     let attack = s.attack || 0;
-    if (name === 'Minitrident' && actor && tileAt(actor.x, actor.y) === 3) attack += 30;
+    const tile = tileAt(actor.x, actor.y);
+    if (name === 'Minitrident' && tile === 3) attack += 30;
+    else if (name === 'Rage' && tile === 5) attack += 50;
     return attack;
   }
 
@@ -505,7 +512,7 @@
       const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
       btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useSkillByName(k));
-      attachTooltip(btn, `${k}<br>${s.desc}<br>Count this battle: ${count}`);
+      attachTooltip(btn, `${k}<br>${s.desc}`);
       addDragHandlers(btn, saveState.skillOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });
       battleSkillsEl.appendChild(btn);
     });
@@ -522,7 +529,7 @@
       const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
       btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useTacticByName(k));
-      attachTooltip(btn, `${k}<br>${t.desc}<br>Count this battle: ${count}`);
+      attachTooltip(btn, `${k}<br>${t.desc}`);
       addDragHandlers(btn, saveState.tacticOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });
       battleTacticsEl.appendChild(btn);
     });
@@ -1165,7 +1172,9 @@
       for (const k of candidates) {
         const s = SKILLS[k];
         let attack = s.attack;
-        if (k === "Minitrident" && tileAt(opponent.x, opponent.y) === 3) attack += 30;
+        const tile = tileAt(opponent.x, opponent.y);
+        if (k === "Minitrident" && tile === 3) attack += 30;
+        else if (k === "Rage" && tile === 5) attack += 50;
         if (attack >= player.hp && Math.random() < (s.acc || 1)) {
           resolveOpponentSkill(k);
           return;
@@ -1194,7 +1203,9 @@
       for (const k of candidates) {
         const s = SKILLS[k];
         let attack = s.attack;
-        if (k === "Minitrident" && tileAt(opponent.x, opponent.y) === 3) attack += 30;
+        const tile = tileAt(opponent.x, opponent.y);
+        if (k === "Minitrident" && tile === 3) attack += 30;
+        else if (k === "Rage" && tile === 5) attack += 50;
         const expected = attack * (s.acc || 1);
         if (expected > bestVal) { bestVal = expected; bestSkill = k; }
       }
@@ -1211,8 +1222,7 @@
     const dx = actorB.x - actorA.x;
     const dy = actorB.y - actorA.y;
     const dist = Math.hypot(dx, dy);
-    const maxRange = 380;
-    if (dist > maxRange) return false;
+    if (dist > 410) return false;
     const steps = Math.ceil(dist / 8);
     for (let i = 1; i < steps; i++) {
       const sx = actorA.x + (dx * (i / steps));
