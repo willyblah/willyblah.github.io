@@ -115,7 +115,9 @@
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
   const shopTacticsEl = $("#shop-tactics");
-  const btnBuyHealth = $("#btn-buy-health");
+  const btnBuy5Health = $("#btn-buy-5-health");
+  const btnBuy10Health = $("#btn-buy-10-health");
+  const btnBuy50Health = $("#btn-buy-50-health");
   const btnShopBack = $("#btn-shop-back");
 
   // Canvas
@@ -388,7 +390,7 @@
   let battleOppSkills = {}, battleOppTactics = {};
   let state = { phase: "pre", battle: null };
 
-  // keyboard movement + shortcuts
+  // keyboard
   const keysDown = {};
   let expectSkillNumber = false;
   let expectTacticNumber = false;
@@ -396,7 +398,7 @@
     const k = e.key.toLowerCase();
     if (k === 'tab') e.preventDefault();
 
-    keysDown[k] = true; // movement keys state
+    keysDown[k] = true;
 
     if (k === 'e') {
       expectSkillNumber = true;
@@ -636,14 +638,17 @@
     renderShopUI(); renderStartUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
-  btnBuyHealth.addEventListener('click', () => {
-    if (saveState.diamonds < 1) { showMessage("Not enough diamonds.", 'error'); return; }
-    saveState.diamonds -= 1;
-    saveState.maxHealth += 5;
+  function buyHealth(price) {
+    if (saveState.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+    saveState.diamonds -= price;
+    saveState.maxHealth += price * 5;
     save(saveState);
     renderShopUI(); renderStartUI();
-    showMessage(`Bought 5 health. You have ${saveState.maxHealth} health now.`, 'success');
-  });
+    showMessage(`Bought ${price * 5} health. You have ${saveState.maxHealth} health now.`, 'success');
+  }
+  btnBuy5Health.addEventListener('click', () => { buyHealth(1); });
+  btnBuy10Health.addEventListener('click', () => { buyHealth(2); });
+  btnBuy50Health.addEventListener('click', () => { buyHealth(10); });
 
   // ---- Battle lifecycle ----
   function prepareBattle() {
