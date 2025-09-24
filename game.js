@@ -764,10 +764,8 @@
         // move away if too close
         if (dist < 260) moveAway(opponent, player.x, player.y);
         else { opponent.vx *= 0.85; opponent.vy *= 0.85; }
-        if (opponent.isChasing) {
+        if (opponent.isChasing)
           opponent.isChasing = false;
-          opponentAIChoose();
-        }
       } else {
         // Chase if far or hiding
         if (dist > 220 || !hasLineOfSight(opponent, player)) {
@@ -1120,8 +1118,7 @@
 
   // ---- Opponent AI ----
   function opponentAIChoose() {
-    if (!state.battle) return;
-    if (state.battle.currentActor !== 'opponent') return;
+    if (!state.battle || state.battle.currentActor !== 'opponent') return;
 
     const delay = 1000 + Math.random() * 800;
     opponent.aiTimer = Date.now() + delay;
