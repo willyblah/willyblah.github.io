@@ -392,38 +392,11 @@
 
   // keyboard
   const keysDown = {};
-  let expectSkillNumber = false;
-  let expectTacticNumber = false;
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (k === 'tab') e.preventDefault();
 
     keysDown[k] = true;
-
-    if (k === 'e') {
-      expectSkillNumber = true;
-      expectTacticNumber = false;
-      battleSkillsEl.style.border = "1.5px solid #2263ad";
-      battleTacticsEl.style.border = "none";
-    }
-    if (k === 'f') {
-      expectTacticNumber = true;
-      expectSkillNumber = false;
-      battleTacticsEl.style.border = "1.5px solid #2263ad";
-      battleSkillsEl.style.border = "none";
-    }
-    if (expectSkillNumber && /^[1-9]$/.test(e.key)) {
-      const i = parseInt(e.key) - 1;
-      const shown = getShownBattleSkills();
-      if (shown[i]) useSkillByName(shown[i]);
-      expectSkillNumber = false;
-    }
-    if (expectTacticNumber && /^[1-9]$/.test(e.key)) {
-      const i = parseInt(e.key) - 1;
-      const shown = getShownBattleTactics();
-      if (shown[i]) useTacticByName(shown[i]);
-      expectTacticNumber = false;
-    }
   });
   window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
 
@@ -453,16 +426,14 @@
     // skills
     const skillOrder = saveState.skillOrder || Object.keys(SKILLS);
     const ownedSkills = skillOrder.filter(k => saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0);
-    ownedSkills.forEach((k, idx) => {
+    ownedSkills.forEach((k) => {
       const s = SKILLS[k];
       const count = saveState.ownedSkills[k] === Infinity ? "∞" : saveState.ownedSkills[k];
       const btn = document.createElement('div');
       btn.className = 'skill-btn';
       btn.draggable = true;
       btn.dataset.name = k;
-      // numeric badge for first 9 shown
-      const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
-      btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
+      btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       attachTooltip(btn, `${k}<br>${s.desc}<br>Price: ${s.price || '—'}`);
       addDragHandlers(btn, saveState.skillOrder, renderStartUI, () => renderStartUI());
       startSkillsEl.appendChild(btn);
@@ -471,15 +442,14 @@
     // tactics
     const tacticOrder = saveState.tacticOrder || Object.keys(TACTICS);
     const ownedTactics = tacticOrder.filter(k => saveState.ownedTactics[k] && saveState.ownedTactics[k] !== 0);
-    ownedTactics.forEach((k, idx) => {
+    ownedTactics.forEach((k) => {
       const t = TACTICS[k];
       const count = saveState.ownedTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
       btn.draggable = true;
       btn.dataset.name = k;
-      const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
-      btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
+      btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       attachTooltip(btn, `${k}<br>${t.desc}<br>Price: ${t.price}`);
       addDragHandlers(btn, saveState.tacticOrder, renderStartUI, () => renderStartUI());
       startTacticsEl.appendChild(btn);
@@ -504,15 +474,13 @@
 
     battleSkillsEl.innerHTML = "";
     const shownSkills = getShownBattleSkills();
-    shownSkills.forEach((k, idx) => {
+    shownSkills.forEach((k) => {
       const s = SKILLS[k];
       const count = battlePlayerSkills[k] === Infinity ? "∞" : (battlePlayerSkills[k] || 0);
       const btn = document.createElement('div');
       btn.className = 'skill-btn';
       btn.dataset.name = k;
-      btn.dataset.index = idx;
-      const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
-      btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
+      btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useSkillByName(k));
       attachTooltip(btn, `${k}<br>${s.desc}`);
       addDragHandlers(btn, saveState.skillOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });
@@ -521,15 +489,13 @@
 
     battleTacticsEl.innerHTML = "";
     const shownTactics = getShownBattleTactics();
-    shownTactics.forEach((k, idx) => {
+    shownTactics.forEach((k) => {
       const t = TACTICS[k];
       const count = battlePlayerTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
       btn.dataset.name = k;
-      btn.dataset.index = idx;
-      const badge = (idx < 9) ? `<div class="num-badge">${idx + 1}</div>` : '';
-      btn.innerHTML = `${badge}<div>${k}</div><div class="skill-count">${count}</div>`;
+      btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useTacticByName(k));
       attachTooltip(btn, `${k}<br>${t.desc}`);
       addDragHandlers(btn, saveState.tacticOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });

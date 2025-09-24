@@ -98,7 +98,7 @@ body {
 .hint {
   color: var(--muted);
   font-size: 13px;
-  margin-top: 6px
+  margin-bottom: 6px
 }
 
 /* Battle layout */
@@ -177,17 +177,6 @@ body {
   font-weight: 600;
   margin-left: auto;
   color: var(--muted)
-}
-
-/* numeric badge */
-.num-badge {
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-right: 6px;
 }
 
 /* shop */
