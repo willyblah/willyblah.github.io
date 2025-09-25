@@ -1350,12 +1350,8 @@
     renderStartUI();
   }
 
-  // ---- UI / interactions ----
-  function setupUI() {
-    renderStartUI();
-    btnShop.addEventListener('click', () => { showShop(); renderShopUI(); });
-  }
-  setupUI();
+  renderStartUI();
+  btnShop.addEventListener('click', () => { showShop(); renderShopUI(); });
 
   window.useSkillByName = useSkillByName;
   window.useTacticByName = useTacticByName;
