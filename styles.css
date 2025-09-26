@@ -95,10 +95,67 @@ body {
   color: white
 }
 
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .hint {
   color: var(--muted);
   font-size: 13px;
   margin-bottom: 6px
+}
+
+/* Scale styles */
+.scale-container {
+  background: var(--glass);
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.scale-track {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+  border-radius: 3px;
+  position: relative;
+  margin: 20px 0;
+}
+
+.scale-dot {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  transition: left 0.1s linear;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.opponent-preview {
+  background: var(--glass);
+  padding: 15px;
+  border-radius: 10px;
+  margin: 15px 0;
+}
+
+.opponent-preview h3 {
+  margin-top: 0;
+  color: var(--accent);
 }
 
 /* Battle layout */

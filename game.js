@@ -24,7 +24,7 @@
   };
 
   const TACTICS = {
-    Dizzydizzy: { price: 12, desc: "Gives user two extra turns." },
+    Dizzydizzy: { price: 12, desc: "Gives you two extra turns." },
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
     Speed: { price: 10, desc: "Speed +50% for 10s." }
   };
@@ -111,6 +111,15 @@
   const btnShop = $("#btn-shop");
   const btnSurrender = $("#btn-surrender");
   const btnReset = $("#btn-reset");
+
+  const scaleScreen = $("#scale-screen");
+  const scaleDot = $("#scale-dot");
+  const btnStopScale = $("#btn-stop-scale");
+  const btnStartBattle = $("#btn-start-battle");
+  const btnScaleBack = $("#btn-scale-back");
+  const opponentPreview = $("#opponent-preview");
+  const previewHealthEl = $("#preview-health");
+  const previewSkillsEl = $("#preview-skills");
 
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
@@ -388,7 +397,14 @@
   let player = null, opponent = null;
   let battlePlayerSkills = {}, battlePlayerTactics = {};
   let battleOppSkills = {}, battleOppTactics = {};
+  let opponentHealth = 0, opponentSkills = [];
   let state = { phase: "pre", battle: null };
+
+  let scaleInterval = null;
+  let scaleDirection = 1;
+  let scalePosition = 0;
+  let scaleStopped = false;
+  let opponentStrength = 0.5;
 
   // keyboard
   const keysDown = {};
@@ -620,23 +636,27 @@
   function prepareBattle() {
     grid = generateMap();
     spawns = spawnPositions(grid);
+
     const startHp = saveState.maxHealth;
     player = new Actor(spawns.first[0], spawns.first[1], startHp, PLAYER_SPEED, '#10b981');
-    opponent = new Actor(spawns.second[0], spawns.second[1], Math.max(8, Math.floor(startHp * (0.9 + Math.random() * 0.2))), OPP_SPEED, '#ef4444');
+    opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, OPP_SPEED, '#ef4444');
+
     // opponent AI chase tracking
     opponent.isChasing = false;
     opponent.lastPostChase = 0;
 
-    // prepare battle owned counts per battle
+    // Prepare battle owned counts
     battlePlayerSkills = {}; battlePlayerTactics = {};
     battleOppSkills = {}; battleOppTactics = {};
     Object.keys(SKILLS).forEach(k => {
       const owned = saveState.ownedSkills[k];
       if (owned === Infinity) battlePlayerSkills[k] = Infinity;
       else battlePlayerSkills[k] = owned || 0;
-      if (owned === Infinity) battleOppSkills[k] = Infinity;
-      else battleOppSkills[k] = owned || 0;
     });
+    Object.keys(SKILLS).forEach(k => {
+      battleOppSkills[k] = opponentSkills.includes(k) ? Infinity : 0;
+    });
+    // Opponent inherits player's tactics
     Object.keys(TACTICS).forEach(k => {
       battlePlayerTactics[k] = saveState.ownedTactics[k] || 0;
       battleOppTactics[k] = saveState.ownedTactics[k] || 0;
@@ -669,9 +689,32 @@
     startLoop();
   }
 
+  function calculateOppHealth() {
+    return Math.floor(6 + (opponentStrength * (0.8 + Math.random() * 0.4) * 200));
+  }
+
+  function calculateOppSkills() {
+    const skillTiers = [
+      { threshold: 0.1, skills: ['Spear', 'Knife'] },
+      { threshold: 0.2, skills: ['Multiknife', 'Multispear'] },
+      { threshold: 0.35, skills: ['Stone Sword', 'Kick'] },
+      { threshold: 0.55, skills: ['Minibomb', 'Flame'] },
+      { threshold: 0.7, skills: ['Oneskill', 'Minitrident'] },
+      { threshold: 0.85, skills: ['Fireball', 'Iron Sword', 'Bombie'] },
+      { threshold: 1.0, skills: ['Punchie', 'Rage', 'Blast', 'MillionSkills'] }
+    ];
+
+    let opponentSkills = [];
+    for (const tier of skillTiers) {
+      opponentSkills = opponentSkills.concat(tier.skills);
+      if (opponentStrength <= tier.threshold) break;
+    }
+
+    return opponentSkills;
+  }
+
   btnBattle.addEventListener('click', () => {
-    showBattle();
-    prepareBattle();
+    showScale();
   });
   btnShop.addEventListener('click', () => {
     showShop();
@@ -691,6 +734,21 @@
   btnShopBack.addEventListener('click', () => {
     showStart();
   });
+  btnStopScale.addEventListener('click', () => {
+    if (!scaleStopped) {
+      stopScale();
+      btnStopScale.disabled = true;
+      btnStopScale.textContent = 'Stopped';
+    }
+  });
+  btnStartBattle.addEventListener('click', () => {
+    showBattle();
+    prepareBattle();
+  });
+  btnScaleBack.addEventListener('click', () => {
+    stopScale();
+    showStart();
+  });
 
   // UI screens
   function showStart() {
@@ -698,17 +756,69 @@
     startScreen.classList.remove('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.add('hidden');
+    scaleScreen.classList.add('hidden');
     renderStartUI();
   }
   function showBattle() {
     startScreen.classList.add('hidden');
     battleScreen.classList.remove('hidden');
     shopScreen.classList.add('hidden');
+    scaleScreen.classList.add('hidden');
   }
   function showShop() {
     startScreen.classList.add('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.remove('hidden');
+    scaleScreen.classList.add('hidden');
+  }
+  function showScale() {
+    startScreen.classList.add('hidden');
+    battleScreen.classList.add('hidden');
+    shopScreen.classList.add('hidden');
+    scaleScreen.classList.remove('hidden');
+    opponentPreview.classList.add('hidden');
+
+    btnStartBattle.disabled = true;
+    btnStopScale.disabled = false;
+    btnStopScale.textContent = 'Stop';
+
+    startScale();
+  }
+
+  function startScale() {
+    scaleStopped = false;
+    scalePosition = 50;
+    scaleDirection = 1;
+    scaleDot.style.left = '50%';
+
+    scaleInterval = setInterval(() => {
+      scalePosition += scaleDirection * 2;
+      if (scalePosition >= 100) {
+        scalePosition = 100;
+        scaleDirection = -1;
+      } else if (scalePosition <= 0) {
+        scalePosition = 0;
+        scaleDirection = 1;
+      }
+
+      scaleDot.style.left = scalePosition + '%';
+    }, 40);
+  }
+
+  function stopScale() {
+    if (scaleInterval) {
+      clearInterval(scaleInterval);
+      scaleInterval = null;
+    }
+    scaleStopped = true;
+    opponentStrength = scalePosition / 100;
+    opponentPreview.classList.remove('hidden');
+    btnStartBattle.disabled = false;
+    // Opponent preview
+    opponentHealth = calculateOppHealth();
+    previewHealthEl.textContent = opponentHealth;
+    opponentSkills = calculateOppSkills();
+    previewSkillsEl.textContent = opponentSkills.join(', ');
   }
 
   // ---- Battle loop & drawing ----
@@ -1068,7 +1178,7 @@
 
   function nextTurnAfterAction(byActor) {
     if (byActor === 'player') {
-      if (player.extraTurns > 0) { player.extraTurns--; showMessage("Extra turn!", 'info'); return; }
+      if (player.extraTurns > 0) { player.extraTurns--; return; }
       switchTurn();
     } else {
       if (opponent.extraTurns > 0) { opponent.extraTurns--; opponentAIChoose(); return; }
@@ -1151,8 +1261,11 @@
 
       // tactics
       if (tacticCandidates.includes("Pushie")) {
-        const distToEdge = distanceToNearestEdge(player.x, player.y);
-        if (distToEdge < 180 && Math.random() < 0.8) {
+        const d1 = player.x;
+        const d2 = canvas.width - player.x;
+        const d3 = player.y;
+        const d4 = canvas.height - player.y;
+        if (Math.min(d1, d2, d3, d4) < 180 && Math.random() < 0.7) {
           applyTacticOpponent("Pushie");
           return;
         }
@@ -1264,11 +1377,6 @@
     return null;
   }
 
-  function distanceToNearestEdge(x, y) {
-    const d1 = x; const d2 = canvas.width - x; const d3 = y; const d4 = canvas.height - y;
-    return Math.min(d1, d2, d3, d4);
-  }
-
   function applyPush(target) {
     const edges = [
       { x: 10, y: target.y },
@@ -1281,7 +1389,7 @@
       const d = Math.hypot(e.x - target.x, e.y - target.y);
       if (d < bd) { bd = d; best = e; }
     }
-    const pushDist = Math.min(110, bd);
+    const pushDist = Math.min(100, bd);
     const ang = Math.atan2(best.y - target.y, best.x - target.x);
     target.x += Math.cos(ang) * pushDist;
     target.y += Math.sin(ang) * pushDist;
