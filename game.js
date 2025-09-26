@@ -1461,8 +1461,5 @@
   renderStartUI();
   btnShop.addEventListener('click', () => { showShop(); renderShopUI(); });
 
-  window.useSkillByName = useSkillByName;
-  window.useTacticByName = useTacticByName;
-
   showStart();
 })();
