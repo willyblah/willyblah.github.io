@@ -32,13 +32,13 @@
   const LEVELS = {
     normal: {
       minHealth: 6,
-      maxHealth: 140,
+      maxHealth: 150,
       minSkills: ['Spear', 'Knife'],
       maxSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill']
     },
     underworld: {
-      minHealth: 140,
-      maxHealth: 300,
+      minHealth: 150,
+      maxHealth: 1050,
       minSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill'],
       maxSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill',
         'Minitrident', 'Fireball', 'Iron Sword', 'Bombie', 'Punchie', 'Rage', 'Blast', 'MillionSkills']
