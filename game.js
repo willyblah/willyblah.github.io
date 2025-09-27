@@ -123,7 +123,6 @@
   const opponentHpFill = $("#opponent-hp-fill");
   const playerHealthText = $("#player-health-text");
   const opponentHealthText = $("#opponent-health-text");
-  const hudDiamondsEl = $("#hud-diamonds");
   const turnIndicatorEl = $("#turn-indicator");
   const btnBattle = $("#btn-battle");
   const btnShop = $("#btn-shop");
@@ -501,7 +500,6 @@
   }
 
   function renderBattleUI() {
-    hudDiamondsEl.textContent = saveState.diamonds;
     playerHpFill.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
     opponentHpFill.style.width = `${Math.max(0, (opponent.hp / opponent.maxHp) * 100)}%`;
 
