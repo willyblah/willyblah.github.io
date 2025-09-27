@@ -1459,8 +1459,8 @@
     let awarded = 0;
     if (playerWon) {
       // calculate reward
-      let awarded = Math.floor(opponentStrength * 15);
-      if (currentLevel === 'Normal') awarded++;
+      awarded = Math.floor(opponentStrength * 15);
+      if (currentLevel === 'normal') awarded += 2;
       else awarded += 10;
       saveState.diamonds = (saveState.diamonds || 0) + awarded;
       save(saveState);
