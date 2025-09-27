@@ -29,6 +29,24 @@
     Speed: { price: 10, desc: "Speed +50% for 10s." }
   };
 
+  const LEVELS = {
+    normal: {
+      minHealth: 6,
+      maxHealth: 140,
+      minSkills: ['Spear', 'Knife'],
+      maxSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill']
+    },
+    underworld: {
+      minHealth: 140,
+      maxHealth: 300,
+      minSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill'],
+      maxSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill',
+        'Minitrident', 'Fireball', 'Iron Sword', 'Bombie', 'Punchie', 'Rage', 'Blast', 'MillionSkills']
+    }
+  };
+
+  let currentLevel = 'normal';
+
   // ---- Persistent storage ----
   function loadSave() {
     let s = localStorage.getItem(storageKey);
@@ -120,6 +138,8 @@
   const opponentPreview = $("#opponent-preview");
   const previewHealthEl = $("#preview-health");
   const previewSkillsEl = $("#preview-skills");
+  const levelSelect = $("#level-select");
+  const previewLevelEl = $("#preview-level");
 
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
@@ -690,27 +710,15 @@
   }
 
   function calculateOppHealth() {
-    return Math.floor(6 + (opponentStrength * (0.8 + Math.random() * 0.4) * 200));
+    const level = LEVELS[currentLevel];
+    const healthRange = level.maxHealth - level.minHealth;
+    return Math.floor(level.minHealth + opponentStrength * healthRange);
   }
 
   function calculateOppSkills() {
-    const skillTiers = [
-      { threshold: 0.1, skills: ['Spear', 'Knife'] },
-      { threshold: 0.2, skills: ['Multiknife', 'Multispear'] },
-      { threshold: 0.35, skills: ['Stone Sword', 'Kick'] },
-      { threshold: 0.55, skills: ['Minibomb', 'Flame'] },
-      { threshold: 0.7, skills: ['Oneskill', 'Minitrident'] },
-      { threshold: 0.85, skills: ['Fireball', 'Iron Sword', 'Bombie'] },
-      { threshold: 1.0, skills: ['Punchie', 'Rage', 'Blast', 'MillionSkills'] }
-    ];
-
-    let opponentSkills = [];
-    for (const tier of skillTiers) {
-      opponentSkills = opponentSkills.concat(tier.skills);
-      if (opponentStrength <= tier.threshold) break;
-    }
-
-    return opponentSkills;
+    const level = LEVELS[currentLevel];
+    const count = Math.floor(level.minSkills.length + opponentStrength * (level.maxSkills.length - level.minSkills.length));
+    return level.maxSkills.slice(0, Math.max(level.minSkills.length, count));
   }
 
   btnBattle.addEventListener('click', () => {
@@ -748,6 +756,9 @@
   btnScaleBack.addEventListener('click', () => {
     stopScale();
     showStart();
+  });
+  levelSelect.addEventListener('change', () => {
+    currentLevel = levelSelect.value;
   });
 
   // UI screens
