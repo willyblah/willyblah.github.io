@@ -664,14 +664,23 @@
     // Prepare battle owned counts
     battlePlayerSkills = {}; battlePlayerTactics = {};
     battleOppSkills = {}; battleOppTactics = {};
+
     Object.keys(SKILLS).forEach(k => {
       const owned = saveState.ownedSkills[k];
       if (owned === Infinity) battlePlayerSkills[k] = Infinity;
       else battlePlayerSkills[k] = owned || 0;
     });
-    Object.keys(SKILLS).forEach(k => {
-      battleOppSkills[k] = opponentSkills.includes(k) ? Infinity : 0;
+
+    const sortedSkills = Object.keys(SKILLS).sort((a, b) => {
+      return SKILLS[b].attack - SKILLS[a].attack;
     });
+    let count = 1;
+    sortedSkills.forEach(k => {
+      battleOppSkills[k] = opponentSkills.includes(k) ? count++ : 0;
+      if (k === 'Spear' || k === 'Knife') battleOppSkills[k] = Infinity;
+      console.log(k, battleOppSkills[k]);
+    });
+
     // Opponent inherits player's tactics
     Object.keys(TACTICS).forEach(k => {
       battlePlayerTactics[k] = saveState.ownedTactics[k] || 0;
