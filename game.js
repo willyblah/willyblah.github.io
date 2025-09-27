@@ -44,7 +44,6 @@
         'Minitrident', 'Fireball', 'Iron Sword', 'Bombie', 'Punchie', 'Rage', 'Blast', 'MillionSkills']
     }
   };
-
   let currentLevel = 'normal';
 
   // ---- Persistent storage ----
@@ -138,7 +137,6 @@
   const previewHealthEl = $("#preview-health");
   const previewSkillsEl = $("#preview-skills");
   const levelSelect = $("#level-select");
-  const previewLevelEl = $("#preview-level");
 
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
