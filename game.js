@@ -1459,13 +1459,9 @@
     let awarded = 0;
     if (playerWon) {
       // calculate reward
-      let totalAttack = 0;
-      Object.keys(SKILLS).forEach(k => {
-        const s = SKILLS[k];
-        if (saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0)
-          totalAttack += s.attack;
-      });
-      awarded = 2 + Math.floor((totalAttack + saveState.maxHealth) / 40);
+      let awarded = opponentStrength * 15;
+      if (currentLevel === 'Normal') awarded++;
+      else awarded += 10;
       saveState.diamonds = (saveState.diamonds || 0) + awarded;
       save(saveState);
     }
