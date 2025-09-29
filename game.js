@@ -31,7 +31,7 @@
 
   const LEVELS = {
     normal: {
-      minHealth: 6,
+      minHealth: 5,
       maxHealth: 150,
       minSkills: ['Spear', 'Knife'],
       maxSkills: ['Spear', 'Knife', 'Multiknife', 'Multispear', 'Stone Sword', 'Kick', 'Minibomb', 'Flame', 'Oneskill']
@@ -678,10 +678,8 @@
     sortedSkills.forEach(k => {
       battleOppSkills[k] = opponentSkills.includes(k) ? count++ : 0;
       if (k === 'Spear' || k === 'Knife') battleOppSkills[k] = Infinity;
-      console.log(k, battleOppSkills[k]);
     });
 
-    // Opponent inherits player's tactics
     Object.keys(TACTICS).forEach(k => {
       battlePlayerTactics[k] = saveState.ownedTactics[k] || 0;
       battleOppTactics[k] = saveState.ownedTactics[k] || 0;
@@ -893,20 +891,18 @@
         if (opponent.isChasing)
           opponent.isChasing = false;
       } else {
-        // Chase if far or hiding
-        if (dist > 220 || !hasLineOfSight(opponent, player)) {
+        // Chase player
+        if (!inRangeAndLOS(opponent, player)) {
           const path = findPath(opponent.x, opponent.y, player.x, player.y);
-          if (path) {
-            followPath(opponent, path);
-          } else {
-            moveTowards(opponent, player.x, player.y);
-          }
+          if (path) followPath(opponent, path);
+          else moveTowards(opponent, player.x, player.y);
           opponent.isChasing = true;
         } else {
           opponent.vx *= 0.85; opponent.vy *= 0.85;
           if (opponent.isChasing) {
             opponent.isChasing = false;
-            opponentAIChoose();
+            if (!opponent.aiTimer || opponent.aiTimer < Date.now())
+              opponentAIChoose();
           }
         }
       }
@@ -1246,7 +1242,12 @@
   function opponentAIChoose() {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
 
-    const delay = 1000 + Math.random() * 800;
+    if (!inRangeAndLOS(opponent, player)) {
+      opponent.isChasing = true;
+      return;
+    }
+
+    const delay = 800 + Math.random() * 1000;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1329,19 +1330,6 @@
     return true;
   }
 
-  function hasLineOfSight(actorA, actorB) {
-    const dx = actorB.x - actorA.x;
-    const dy = actorB.y - actorA.y;
-    const dist = Math.hypot(dx, dy);
-    const steps = Math.ceil(dist / 8) || 1;
-    for (let i = 1; i < steps; i++) {
-      const sx = actorA.x + (dx * (i / steps));
-      const sy = actorA.y + (dy * (i / steps));
-      if (tileAt(sx, sy) === 2) return false;
-    }
-    return true;
-  }
-
   function resolveOpponentSkill(name) {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
     if (!battleOppSkills[name] || (battleOppSkills[name] <= 0 && battleOppSkills[name] !== Infinity)) {
@@ -1349,10 +1337,12 @@
       return;
     }
     const attackVal = getSkillAttackValue(name, opponent);
-    if (Math.random() < (SKILLS[name].acc || 1)) {
+    if (inRangeAndLOS(opponent, player) && Math.random() < (SKILLS[name].acc || 1)) {
       player.applyDamage(attackVal);
       showMessage(`Opponent used <strong>${name}</strong>! You lose ${attackVal} HP.`, 'error');
       animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
+    } else if (!inRangeAndLOS(opponent, player)) {
+      showMessage(`Opponent used <strong>${name}</strong>! Too far or blocked by wall.`, 'info');
     } else {
       showMessage(`Opponent used <strong>${name}</strong>! Missed!`, 'info');
     }
