@@ -693,15 +693,11 @@
     // turn init
     const startPeriodMs = 5000;
     state.battle = {
-      startTime: Date.now(),
       startPeriodEnd: Date.now() + startPeriodMs,
       currentActor: null,
-      awaitingAction: false,
       turnEndTime: null,
       turnTimeout: 10000,
-      lastActionTime: 0,
-      battleOver: false,
-      poolMap: grid
+      battleOver: false
     };
 
     setTimeout(() => {
@@ -1285,7 +1281,7 @@
         const d2 = canvas.width - player.x;
         const d3 = player.y;
         const d4 = canvas.height - player.y;
-        if (Math.min(d1, d2, d3, d4) < 180 && Math.random() < 0.7) {
+        if (Math.min(d1, d2, d3, d4) < 140 && Math.random() < 0.6) {
           applyTacticOpponent("Pushie");
           return;
         }
@@ -1294,7 +1290,7 @@
         applyTacticOpponent("Dizzydizzy");
         return;
       }
-      if (tacticCandidates.includes("Speed") && opponent.hp <= opponent.maxHp * 0.6 && Math.random() < 0.5) {
+      if (tacticCandidates.includes("Speed") && opponent.hp <= opponent.maxHp * 0.7 && Math.random() < 0.6) {
         applyTacticOpponent("Speed");
         return;
       }
@@ -1355,7 +1351,6 @@
 
   function applyTacticOpponent(name) {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
-    // check opponent-specific tactic counts
     if (!battleOppTactics[name] || battleOppTactics[name] <= 0) { switchTurn(); return; }
     if (name === "Dizzydizzy") {
       opponent.extraTurns += 2;
