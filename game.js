@@ -687,6 +687,9 @@
 
     renderBattleUI();
 
+    const sidepanel = document.querySelector('.sidepanel');
+    if (sidepanel) sidepanel.scrollTop = 0;
+
     // turn init
     const startPeriodMs = 5000;
     state.battle = {

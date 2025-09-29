@@ -210,9 +210,11 @@ a:visited {
 
 .sidepanel {
   width: 300px;
+  max-height: 560px;
   display: flex;
   flex-direction: column;
-  gap: 8px
+  gap: 8px;
+  overflow-y: auto;
 }
 
 .healthbar {
