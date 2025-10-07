@@ -33,7 +33,7 @@
         <button id="btn-shop" class="btn shop">Shop</button>
         <button id="btn-reset" class="btn danger">Reset Progress</button>
       </div>
-      <p class="hint">Version: 1.4.1</p>
+      <p class="hint">Version: 1.5</p>
       <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a>
     </div>
 
@@ -41,14 +41,12 @@
     <div id="battle-screen" class="screen hidden">
       <div class="topbar">
         <div class="left">
-          <div>Player HP: <span class="health-text" id="player-health-text">--/--</span>
-            <div style="height: 2px;"></div>
+          <div>Player HP: <span id="player-health-text">--/--</span>
             <div class="healthbar">
               <div class="hp-fill" id="player-hp-fill"></div>
             </div>
           </div>
-          <div>Opponent HP: <span class="health-text" id="opponent-health-text">--/--</span>
-            <div style="height: 2px;"></div>
+          <div>Opponent HP: <span id="opponent-health-text">--/--</span>
             <div class="healthbar">
               <div class="hp-fill" id="opponent-hp-fill"></div>
             </div>
@@ -82,7 +80,7 @@
     <div id="scale-screen" class="screen hidden">
       <h1>Opponent Strength</h1>
 
-      <select id="level-select" class="level-dropdown">
+      <select id="level-select" class="level-dropdown" aria-label="Select Level">
         <option value="normal">Normal</option>
         <option value="underworld">Underworld</option>
       </select>
@@ -136,7 +134,6 @@
   </div>
 
   <div id="tooltip" class="tooltip hidden"></div>
-
   <div id="messages" class="messages"></div>
 
   <script src="game.js"></script>

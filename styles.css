@@ -1,11 +1,9 @@
 :root {
-  --bg: #0f1724;
   --card: #0b1220;
   --accent: #7c3aed;
   --muted: #94a3b8;
   --danger: #ef4444;
   --glass: rgba(255, 255, 255, 0.03);
-  --panel-pad: 12px;
 }
 
 * {
@@ -21,10 +19,7 @@ body {
   padding: 24px;
 }
 
-a:link {
-  color: lightblue;
-}
-
+a:link,
 a:visited {
   color: lightblue;
 }
@@ -32,10 +27,9 @@ a:visited {
 .screen {
   max-width: 1200px;
   margin: 0 auto;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  background: rgba(255, 255, 255, 0.02);
   padding: 18px;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.7);
 }
 
 .hidden {
@@ -58,7 +52,7 @@ a:visited {
 
 .panel {
   background: var(--glass);
-  padding: var(--panel-pad);
+  padding: 12px;
   border-radius: 10px;
   margin-bottom: 10px
 }
@@ -151,7 +145,6 @@ a:visited {
   left: 0%;
   transform: translate(-50%, -50%);
   transition: left 0.1s linear;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .opponent-preview {
@@ -177,8 +170,6 @@ a:visited {
 .level-dropdown option {
   background: var(--card);
   color: var(--muted);
-  padding: 8px;
-  font-size: 14px;
 }
 
 /* Battle layout */
@@ -223,7 +214,8 @@ a:visited {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.03)
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  margin-top: 2px;
 }
 
 .hp-fill {
@@ -237,18 +229,12 @@ a:visited {
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  cursor: grab;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 120px;
   position: relative;
-}
-
-.skill-btn.dragging,
-.tactic-btn.dragging {
-  opacity: 0.5
 }
 
 .skill-count {
@@ -313,7 +299,6 @@ a:visited {
   border-radius: 8px;
   color: #e6f6ff;
   font-size: 14px;
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
   opacity: 0;
   transform: translateX(10px);
   pointer-events: auto;

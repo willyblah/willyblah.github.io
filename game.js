@@ -54,16 +54,13 @@
         diamonds: 0,
         maxHealth: 10,
         ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
-        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
-        skillOrder: Object.keys(SKILLS),
-        tacticOrder: Object.keys(TACTICS)
+        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
       };
     }
     try {
       const parsed = JSON.parse(s);
 
       const ownedSkills = { ...(parsed.ownedSkills || {}) };
-      // Add any missing or null/default skills
       Object.keys(SKILLS).forEach(k => {
         const val = ownedSkills[k];
         if (val == null) {
@@ -72,7 +69,6 @@
         }
       });
 
-      // Same approach for tactics
       const ownedTactics = { ...(parsed.ownedTactics || {}) };
       Object.keys(TACTICS).forEach(k => {
         const val = ownedTactics[k];
@@ -83,9 +79,7 @@
         diamonds: parsed.diamonds || 0,
         maxHealth: parsed.maxHealth || 10,
         ownedSkills,
-        ownedTactics,
-        skillOrder: parsed.skillOrder || Object.keys(SKILLS),
-        tacticOrder: parsed.tacticOrder || Object.keys(TACTICS)
+        ownedTactics
       };
     } catch (e) {
       console.error("Load fail", e);
@@ -93,9 +87,7 @@
         diamonds: 0,
         maxHealth: 10,
         ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
-        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
-        skillOrder: Object.keys(SKILLS),
-        tacticOrder: Object.keys(TACTICS)
+        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
       };
     }
   }
@@ -434,13 +426,12 @@
   window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
 
   // ---- Messages ----
-  function showMessage(htmlText, type = 'info', timeout = 3000) {
+  function showMessage(htmlText, type = 'info', timeout = 2000) {
     const msg = document.createElement('div');
     msg.className = `message ${type}`;
     msg.innerHTML = htmlText;
     messagesContainer.appendChild(msg);
 
-    // remove after timeout with animation
     setTimeout(() => {
       msg.style.animation = 'msgOut 300ms forwards';
       setTimeout(() => msg.remove(), 320);
@@ -457,44 +448,37 @@
     startTacticsEl.innerHTML = "";
 
     // skills
-    const skillOrder = saveState.skillOrder || Object.keys(SKILLS);
-    const ownedSkills = skillOrder.filter(k => saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0);
+    const ownedSkills = Object.keys(SKILLS).filter(k => saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0);
     ownedSkills.forEach((k) => {
       const s = SKILLS[k];
       const count = saveState.ownedSkills[k] === Infinity ? "∞" : saveState.ownedSkills[k];
       const btn = document.createElement('div');
       btn.className = 'skill-btn';
-      btn.draggable = true;
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       attachTooltip(btn, `${k}<br>${s.desc}<br>Price: ${s.price || '—'}`);
-      addDragHandlers(btn, saveState.skillOrder, renderStartUI, () => renderStartUI());
       startSkillsEl.appendChild(btn);
     });
 
     // tactics
-    const tacticOrder = saveState.tacticOrder || Object.keys(TACTICS);
-    const ownedTactics = tacticOrder.filter(k => saveState.ownedTactics[k] && saveState.ownedTactics[k] !== 0);
+    const ownedTactics = Object.keys(TACTICS).filter(k => saveState.ownedTactics[k] && saveState.ownedTactics[k] !== 0);
     ownedTactics.forEach((k) => {
       const t = TACTICS[k];
       const count = saveState.ownedTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
-      btn.draggable = true;
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       attachTooltip(btn, `${k}<br>${t.desc}<br>Price: ${t.price}`);
-      addDragHandlers(btn, saveState.tacticOrder, renderStartUI, () => renderStartUI());
       startTacticsEl.appendChild(btn);
     });
   }
 
   function getShownBattleSkills() {
-    // maintain original order but filter to what is available this battle
-    return saveState.skillOrder.filter(k => (battlePlayerSkills[k] && battlePlayerSkills[k] !== 0) || battlePlayerSkills[k] === Infinity);
+    return Object.keys(SKILLS).filter(k => (battlePlayerSkills[k] && battlePlayerSkills[k] !== 0) || battlePlayerSkills[k] === Infinity);
   }
   function getShownBattleTactics() {
-    return saveState.tacticOrder.filter(k => (battlePlayerTactics[k] && battlePlayerTactics[k] !== 0));
+    return Object.keys(TACTICS).filter(k => (battlePlayerTactics[k] && battlePlayerTactics[k] !== 0));
   }
 
   function renderBattleUI() {
@@ -515,7 +499,6 @@
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useSkillByName(k));
       attachTooltip(btn, `${k}<br>${s.desc}`);
-      addDragHandlers(btn, saveState.skillOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });
       battleSkillsEl.appendChild(btn);
     });
 
@@ -530,7 +513,6 @@
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useTacticByName(k));
       attachTooltip(btn, `${k}<br>${t.desc}`);
-      addDragHandlers(btn, saveState.tacticOrder, () => { renderBattleUI(); }, () => { renderBattleUI(); });
       battleTacticsEl.appendChild(btn);
     });
   }
@@ -584,33 +566,6 @@
   function positionTooltip(x, y) {
     tooltip.style.left = (x + 12) + 'px';
     tooltip.style.top = (y + 12) + 'px';
-  }
-
-  // Drag reorder
-  function addDragHandlers(node, orderArray, onChange, onEnd) {
-    node.addEventListener('dragstart', (ev) => {
-      node.classList.add('dragging');
-      ev.dataTransfer.setData('text/plain', node.dataset.name);
-      setTimeout(() => node.classList.add('invisible'), 0);
-    });
-    node.addEventListener('dragend', (ev) => {
-      node.classList.remove('dragging', 'invisible');
-      if (onEnd) onEnd();
-      save(saveState);
-    });
-    node.addEventListener('dragover', (ev) => ev.preventDefault());
-    node.addEventListener('drop', (ev) => {
-      ev.preventDefault();
-      const from = ev.dataTransfer.getData('text/plain');
-      const to = node.dataset.name;
-      const fi = orderArray.indexOf(from);
-      const ti = orderArray.indexOf(to);
-      if (fi >= 0 && ti >= 0) {
-        orderArray.splice(fi, 1);
-        orderArray.splice(ti, 0, from);
-        if (onChange) onChange();
-      }
-    });
   }
 
   // ---- Shop actions ----
