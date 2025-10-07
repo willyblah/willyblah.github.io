@@ -30,6 +30,7 @@ a:visited {
   background: rgba(255, 255, 255, 0.02);
   padding: 18px;
   border-radius: 12px;
+  position: relative;
 }
 
 .hidden {
@@ -320,6 +321,40 @@ a:visited {
 
 .message.error {
   background: linear-gradient(90deg, #ef4444, #b91c1c);
+}
+
+.auth-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--glass);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.input-field:focus {
+  outline: none;
+  border: 1px solid var(--accent);
+}
+
+.input-field::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.verify-hint {
+  color: orange;
 }
 
 @keyframes msgIn {

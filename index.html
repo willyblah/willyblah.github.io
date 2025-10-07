@@ -7,12 +7,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Game</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
 </head>
 
 <body>
   <div id="app">
-    <!-- Start Screen -->
     <div id="start-screen" class="screen">
+      <div class="auth-controls">
+        <button id="btn-signup" class="btn primary">Sign Up</button>
+        <button id="btn-login" class="btn primary">Log In</button>
+        <span id="user-greeting" class="hidden"></span>
+        <button id="btn-logout" class="btn danger hidden">Log Out</button>
+      </div>
+
       <h1 class="title">The Game</h1>
       <div class="hud">
         <div>Health: <span id="start-health">--</span></div>
@@ -33,11 +40,12 @@
         <button id="btn-shop" class="btn shop">Shop</button>
         <button id="btn-reset" class="btn danger">Reset Progress</button>
       </div>
+
       <p class="hint">Version: 1.5</p>
       <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a>
+      <p id="verify-hint" class="hint verify-hint hidden">Please verify your email to save progress.</p>
     </div>
 
-    <!-- Battle Screen -->
     <div id="battle-screen" class="screen hidden">
       <div class="topbar">
         <div class="left">
@@ -76,7 +84,6 @@
       </div>
     </div>
 
-    <!-- Scale Screen -->
     <div id="scale-screen" class="screen hidden">
       <h1>Opponent Strength</h1>
 
@@ -108,7 +115,6 @@
       </div>
     </div>
 
-    <!-- Shop Screen -->
     <div id="shop-screen" class="screen hidden">
       <h1>Shop</h1>
       <div>Diamonds: <span id="shop-diamonds">0</span></div>
@@ -130,6 +136,43 @@
         <button id="btn-buy-50-health" class="btn">Buy 50 HP (10 diamonds)</button>
         <button id="btn-shop-back" class="btn">Back</button>
       </div>
+    </div>
+
+    <div id="signup-screen" class="screen hidden">
+      <h1>Sign Up</h1>
+      <form id="signup-form">
+        <input type="text" id="signup-username" class="input-field" placeholder="Username" required>
+        <input type="email" id="signup-email" class="input-field" placeholder="Email" required>
+        <input type="password" id="signup-password" class="input-field" placeholder="Password" required>
+        <div class="controls">
+          <button type="submit" class="btn primary">Sign Up</button>
+          <button id="btn-signup-back" class="btn">Back</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="login-screen" class="screen hidden">
+      <h1>Log In</h1>
+      <form id="login-form">
+        <input type="text" id="login-identifier" class="input-field" placeholder="Username or Email" required>
+        <input type="password" id="login-password" class="input-field" placeholder="Password" required>
+        <div class="controls">
+          <button type="submit" class="btn primary">Log In</button>
+          <button id="btn-login-back" class="btn">Back</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="verify-screen" class="screen hidden">
+      <h2>Email Verification</h2>
+      <p>Please check your inbox for the verification email.</p>
+      <div class="controls">
+        <button id="btn-verify-back" class="btn primary">Back to Start</button>
+      </div>
+    </div>
+
+    <div id="block-screen" class="screen hidden">
+      <h2>The Game is not available in your country or region.</h2>
     </div>
   </div>
 

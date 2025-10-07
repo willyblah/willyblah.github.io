@@ -1,6 +1,11 @@
-(() => {
+(async () => {
+  AV.init({
+    appId: 'MuZiTMBr50yVU5wL2urxOXZV-MdYXbMMI',
+    appKey: 'kreOP6P8hmHOcgLlyEEBsg8z',
+    serverURL: 'https://muzitmbr.api.lncldglobal.com'
+  });
+
   const $ = (sel) => document.querySelector(sel);
-  const storageKey = "thegame_save_v1";
 
   // ---- Game data definitions ----
   const SKILLS = {
@@ -46,55 +51,51 @@
   };
   let currentLevel = 'normal';
 
-  // ---- Persistent storage ----
-  function loadSave() {
-    let s = localStorage.getItem(storageKey);
-    if (!s) {
-      return {
-        diamonds: 0,
-        maxHealth: 10,
-        ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
-        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
-      };
-    }
+  async function loadSave() {
+    const currentUser = AV.User.current();
+    if (!currentUser) return getDefaultSave();
     try {
-      const parsed = JSON.parse(s);
-
-      const ownedSkills = { ...(parsed.ownedSkills || {}) };
-      Object.keys(SKILLS).forEach(k => {
-        const val = ownedSkills[k];
-        if (val == null) {
-          if (SKILLS[k].default) ownedSkills[k] = Infinity;
-          else ownedSkills[k] = 0;
-        }
-      });
-
-      const ownedTactics = { ...(parsed.ownedTactics || {}) };
-      Object.keys(TACTICS).forEach(k => {
-        const val = ownedTactics[k];
-        if (val == null) ownedTactics[k] = 0;
-      });
-
+      await currentUser.fetch();
+      if (!currentUser.get('emailVerified'))
+        return getDefaultSave();
+      const loadedSkills = currentUser.get('ownedSkills') || {};
+      const ownedSkills = Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].infinite ? Infinity : (loadedSkills[k] ?? 0)]));
       return {
-        diamonds: parsed.diamonds || 0,
-        maxHealth: parsed.maxHealth || 10,
+        diamonds: currentUser.get('diamonds') || 0,
+        maxHealth: currentUser.get('maxHealth') || 10,
         ownedSkills,
-        ownedTactics
+        ownedTactics: currentUser.get('ownedTactics') || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
       };
     } catch (e) {
-      console.error("Load fail", e);
-      return {
-        diamonds: 0,
-        maxHealth: 10,
-        ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
-        ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
-      };
+      console.error("Load fail.", e);
+      return getDefaultSave();
     }
   }
-  function save(state) {
-    localStorage.setItem(storageKey, JSON.stringify(state));
+
+  function getDefaultSave() {
+    return {
+      diamonds: 0,
+      maxHealth: 10,
+      ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
+      ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
+    };
   }
-  let saveState = loadSave();
+
+  async function save(state) {
+    const currentUser = AV.User.current();
+    if (!currentUser || !currentUser.get('emailVerified')) return;
+    try {
+      currentUser.set('diamonds', state.diamonds);
+      currentUser.set('maxHealth', state.maxHealth);
+      currentUser.set('ownedSkills', state.ownedSkills);
+      currentUser.set('ownedTactics', state.ownedTactics);
+      await currentUser.save();
+    } catch (e) {
+      console.error("Save fail.", e);
+      showMessage("Failed to save progress.", 'error');
+    }
+  }
+  let userData = await loadSave();
 
   // ---- UI references ----
   const startScreen = $("#start-screen");
@@ -137,6 +138,25 @@
   const btnBuy10Health = $("#btn-buy-10-health");
   const btnBuy50Health = $("#btn-buy-50-health");
   const btnShopBack = $("#btn-shop-back");
+
+  const signupScreen = $("#signup-screen");
+  const loginScreen = $("#login-screen");
+  const verifyScreen = $("#verify-screen");
+  const signupForm = $("#signup-form");
+  const loginForm = $("#login-form");
+  const btnSignup = $("#btn-signup");
+  const btnLogin = $("#btn-login");
+  const btnLogout = $("#btn-logout");
+  const btnSignupBack = $("#btn-signup-back");
+  const btnLoginBack = $("#btn-login-back");
+  const btnVerifyBack = $("#btn-verify-back");
+  const signupUsername = $("#signup-username");
+  const signupEmail = $("#signup-email");
+  const signupPassword = $("#signup-password");
+  const loginIdentifier = $("#login-identifier");
+  const loginPassword = $("#login-password");
+  const verifyHint = $("#verify-hint");
+  const userGreeting = $("#user-greeting");
 
   // Canvas
   const canvas = $("#game-canvas");
@@ -425,7 +445,6 @@
   });
   window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
 
-  // ---- Messages ----
   function showMessage(htmlText, type = 'info', timeout = 2000) {
     const msg = document.createElement('div');
     msg.className = `message ${type}`;
@@ -439,19 +458,17 @@
     return msg;
   }
 
-  // ---- UI helpers ----
-
   function renderStartUI() {
-    startHealthEl.textContent = saveState.maxHealth;
-    startDiamondsEl.textContent = saveState.diamonds;
+    startHealthEl.textContent = userData.maxHealth;
+    startDiamondsEl.textContent = userData.diamonds;
     startSkillsEl.innerHTML = "";
     startTacticsEl.innerHTML = "";
 
     // skills
-    const ownedSkills = Object.keys(SKILLS).filter(k => saveState.ownedSkills[k] && saveState.ownedSkills[k] !== 0);
+    const ownedSkills = Object.keys(SKILLS).filter(k => userData.ownedSkills[k] && userData.ownedSkills[k] !== 0);
     ownedSkills.forEach((k) => {
       const s = SKILLS[k];
-      const count = saveState.ownedSkills[k] === Infinity ? "∞" : saveState.ownedSkills[k];
+      const count = userData.ownedSkills[k] === Infinity ? "∞" : userData.ownedSkills[k];
       const btn = document.createElement('div');
       btn.className = 'skill-btn';
       btn.dataset.name = k;
@@ -461,10 +478,10 @@
     });
 
     // tactics
-    const ownedTactics = Object.keys(TACTICS).filter(k => saveState.ownedTactics[k] && saveState.ownedTactics[k] !== 0);
+    const ownedTactics = Object.keys(TACTICS).filter(k => userData.ownedTactics[k] && userData.ownedTactics[k] !== 0);
     ownedTactics.forEach((k) => {
       const t = TACTICS[k];
-      const count = saveState.ownedTactics[k] || 0;
+      const count = userData.ownedTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
       btn.dataset.name = k;
@@ -472,6 +489,25 @@
       attachTooltip(btn, `${k}<br>${t.desc}<br>Price: ${t.price}`);
       startTacticsEl.appendChild(btn);
     });
+
+    const currentUser = AV.User.current();
+    if (currentUser) {
+      btnSignup.classList.add('hidden');
+      btnLogin.classList.add('hidden');
+      btnLogout.classList.remove('hidden');
+      userGreeting.classList.remove('hidden');
+      userGreeting.textContent = `${currentUser.get('username')}`;
+      if (!currentUser.get('emailVerified'))
+        verifyHint.classList.remove('hidden');
+      else
+        verifyHint.classList.add('hidden');
+    } else {
+      btnSignup.classList.remove('hidden');
+      btnLogin.classList.remove('hidden');
+      btnLogout.classList.add('hidden');
+      userGreeting.classList.add('hidden');
+      verifyHint.classList.add('hidden');
+    }
   }
 
   function getShownBattleSkills() {
@@ -518,7 +554,7 @@
   }
 
   function renderShopUI() {
-    shopDiamondsEl.textContent = saveState.diamonds;
+    shopDiamondsEl.textContent = userData.diamonds;
     shopSkillsEl.innerHTML = "";
     shopTacticsEl.innerHTML = "";
     Object.keys(SKILLS).forEach(k => {
@@ -569,35 +605,35 @@
   }
 
   // ---- Shop actions ----
-  function buySkill(name) {
+  async function buySkill(name) {
     const s = SKILLS[name];
     if (!s.price) {
       showMessage(`<strong>${name}</strong> cannot be purchased.`, 'warn');
       return;
     }
-    if (saveState.diamonds < s.price) { showMessage("Not enough diamonds.", 'error'); return; }
-    saveState.diamonds -= s.price;
-    saveState.ownedSkills[name] = (saveState.ownedSkills[name] || 0) + 1;
-    save(saveState);
+    if (userData.diamonds < s.price) { showMessage("Not enough diamonds.", 'error'); return; }
+    userData.diamonds -= s.price;
+    userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
+    await save(userData);
     renderShopUI(); renderStartUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
-  function buyTactic(name) {
+  async function buyTactic(name) {
     const t = TACTICS[name];
-    if (saveState.diamonds < t.price) { showMessage("Not enough diamonds.", 'error'); return; }
-    saveState.diamonds -= t.price;
-    saveState.ownedTactics[name] = (saveState.ownedTactics[name] || 0) + 1;
-    save(saveState);
+    if (userData.diamonds < t.price) { showMessage("Not enough diamonds.", 'error'); return; }
+    userData.diamonds -= t.price;
+    userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
+    await save(userData);
     renderShopUI(); renderStartUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
-  function buyHealth(price) {
-    if (saveState.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
-    saveState.diamonds -= price;
-    saveState.maxHealth += price * 5;
-    save(saveState);
+  async function buyHealth(price) {
+    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+    userData.diamonds -= price;
+    userData.maxHealth += price * 5;
+    await save(userData);
     renderShopUI(); renderStartUI();
-    showMessage(`Bought ${price * 5} health. You have ${saveState.maxHealth} health now.`, 'success');
+    showMessage(`Bought ${price * 5} health. You have ${userData.maxHealth} health now.`, 'success');
   }
   btnBuy5Health.addEventListener('click', () => { buyHealth(1); });
   btnBuy10Health.addEventListener('click', () => { buyHealth(2); });
@@ -608,7 +644,7 @@
     grid = generateMap();
     spawns = spawnPositions(grid);
 
-    const startHp = saveState.maxHealth;
+    const startHp = userData.maxHealth;
     player = new Actor(spawns.first[0], spawns.first[1], startHp, PLAYER_SPEED, '#10b981');
     opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, OPP_SPEED, '#ef4444');
 
@@ -621,7 +657,7 @@
     battleOppSkills = {}; battleOppTactics = {};
 
     Object.keys(SKILLS).forEach(k => {
-      const owned = saveState.ownedSkills[k];
+      const owned = userData.ownedSkills[k];
       if (owned === Infinity) battlePlayerSkills[k] = Infinity;
       else battlePlayerSkills[k] = owned || 0;
     });
@@ -636,8 +672,8 @@
     });
 
     Object.keys(TACTICS).forEach(k => {
-      battlePlayerTactics[k] = saveState.ownedTactics[k] || 0;
-      battleOppTactics[k] = saveState.ownedTactics[k] || 0;
+      battlePlayerTactics[k] = userData.ownedTactics[k] || 0;
+      battleOppTactics[k] = userData.ownedTactics[k] || 0;
     });
 
     renderBattleUI();
@@ -689,10 +725,10 @@
     if (!state.battle) return;
     finalizeEndBattle(false, "You surrendered.");
   });
-  btnReset.addEventListener('click', () => {
+  btnReset.addEventListener('click', async () => {
     if (!confirm("Reset all progress?")) return;
-    localStorage.removeItem(storageKey);
-    saveState = loadSave();
+    userData = getDefaultSave();
+    await save(userData);
     renderStartUI();
     showMessage("Progress reset.", 'info');
   });
@@ -717,14 +753,84 @@
   levelSelect.addEventListener('change', () => {
     currentLevel = levelSelect.value;
   });
+  btnSignup.addEventListener('click', () => showSignup());
+  btnLogin.addEventListener('click', () => showLogin());
+  btnLogout.addEventListener('click', async () => {
+    await AV.User.logOut();
+    userData = await loadSave();
+    showStart();
+  });
+  btnSignupBack.addEventListener('click', () => showStart());
+  btnLoginBack.addEventListener('click', () => showStart());
+  btnVerifyBack.addEventListener('click', () => showStart());
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = signupUsername.value.trim();
+    const email = signupEmail.value.trim();
+    const password = signupPassword.value.trim();
+    const submitBtn = signupForm.querySelector('button[type="submit"]');
+    if (!username || !email || !password) {
+      showMessage("All fields required.", 'error');
+      return;
+    }
+    submitBtn.disabled = true;
+    try {
+      const user = new AV.User();
+      user.setUsername(username);
+      user.setPassword(password);
+      user.setEmail(email);
+      await user.signUp();
+      showVerify();
+    } catch (err) {
+      showMessage(`Sign up failed: ${err.message}`, 'error', 3000);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const identifier = loginIdentifier.value.trim();
+    const password = loginPassword.value.trim();
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    if (!identifier || !password) {
+      showMessage("All fields required.", 'error');
+      return;
+    }
+    submitBtn.disabled = true;
+    try {
+      let usernameToUse = identifier;
+      if (identifier.includes('@')) {
+        const query = new AV.Query('_User');
+        query.equalTo('email', identifier);
+        const user = await query.first();
+        if (!user) {
+          showMessage("No user found with that email.", 'error');
+          return;
+        }
+        usernameToUse = user.get('username');
+      }
+      const loggedInUser = await AV.User.logIn(usernameToUse, password);
+      await loggedInUser.fetch();
+      userData = await loadSave();
+      showStart();
+    } catch (err) {
+      showMessage(`Log in failed: ${err.message}`, 'error', 3000);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
 
   // UI screens
-  function showStart() {
+  async function showStart() {
     state.phase = 'startScreen';
     startScreen.classList.remove('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.add('hidden');
     scaleScreen.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
+    userData = await loadSave();
     renderStartUI();
   }
   function showBattle() {
@@ -732,12 +838,18 @@
     battleScreen.classList.remove('hidden');
     shopScreen.classList.add('hidden');
     scaleScreen.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
   }
   function showShop() {
     startScreen.classList.add('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.remove('hidden');
     scaleScreen.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
   }
   function showScale() {
     startScreen.classList.add('hidden');
@@ -745,12 +857,42 @@
     shopScreen.classList.add('hidden');
     scaleScreen.classList.remove('hidden');
     opponentPreview.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
 
     btnStartBattle.disabled = true;
     btnStopScale.disabled = false;
     btnStopScale.textContent = 'Stop';
 
     startScale();
+  }
+  function showSignup() {
+    startScreen.classList.add('hidden');
+    battleScreen.classList.add('hidden');
+    shopScreen.classList.add('hidden');
+    scaleScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
+    signupScreen.classList.remove('hidden');
+  }
+  function showLogin() {
+    startScreen.classList.add('hidden');
+    battleScreen.classList.add('hidden');
+    shopScreen.classList.add('hidden');
+    scaleScreen.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    verifyScreen.classList.add('hidden');
+    loginScreen.classList.remove('hidden');
+  }
+  function showVerify() {
+    startScreen.classList.add('hidden');
+    battleScreen.classList.add('hidden');
+    shopScreen.classList.add('hidden');
+    scaleScreen.classList.add('hidden');
+    signupScreen.classList.add('hidden');
+    loginScreen.classList.add('hidden');
+    verifyScreen.classList.remove('hidden');
   }
 
   function startScale() {
@@ -1396,7 +1538,7 @@
   }
 
   // End battle
-  function finalizeEndBattle(playerWon, message) {
+  async function finalizeEndBattle(playerWon, message) {
     if (!state.battle || state.battle.battleOver) return;
     state.battle.battleOver = true;
     let awarded = 0;
@@ -1405,16 +1547,32 @@
       awarded = Math.floor(opponentStrength * 15);
       if (currentLevel === 'normal') awarded += 2;
       else awarded += 10;
-      saveState.diamonds = (saveState.diamonds || 0) + awarded;
-      save(saveState);
+      userData.diamonds = (userData.diamonds || 0) + awarded;
+      await save(userData);
     }
     showMessage((playerWon ? "You win! " : "You lose. ") + message + (playerWon ? ` Diamonds earned: ${awarded}` : ""), playerWon ? 'success' : 'error');
     showStart();
     renderStartUI();
   }
 
-  renderStartUI();
-  btnShop.addEventListener('click', () => { showShop(); renderShopUI(); });
+  async function inChina() {
+    try {
+      const response = await fetch('https://ipapi.co/country/');
+      const country = await response.text();
+      return country === 'CN';
+    } catch (error) {
+      showMessage(`Error fetching country: ${error}`);
+      return false;
+    }
+  }
 
-  showStart();
+  async function init() {
+    if (await inChina()) {
+      $("#block-screen").classList.remove('hidden');
+      startScreen.classList.add('hidden');
+    } else {
+      showStart();
+    }
+  }
+  init();
 })();
