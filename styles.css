@@ -37,6 +37,51 @@ a:visited {
   display: none
 }
 
+#loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+#loading-screen.hidden {
+  display: none !important;
+}
+
+.loading-animation {
+  border: 6px solid rgba(255, 255, 255, 0.1);
+  border-top: 6px solid var(--accent);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#loading-screen p {
+  margin-top: 16px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
 .title {
   font-size: 44px;
   margin: 6px 0;
@@ -73,7 +118,7 @@ a:visited {
 
 .btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 14px;
   border-radius: 8px;
   color: inherit;
@@ -195,9 +240,7 @@ a:visited {
 }
 
 #game-canvas {
-  background: linear-gradient(180deg, #9ad0ff 0%, #7fbfff 100%);
   border-radius: 8px;
-  border: 6px solid rgba(255, 255, 255, 0.06)
 }
 
 .sidepanel {
@@ -267,6 +310,22 @@ a:visited {
   padding: 8px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px
+}
+
+#health-amount {
+  width: 60px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: inherit;
+  text-align: center;
+  font-size: 14px;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+#health-amount:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .tooltip {

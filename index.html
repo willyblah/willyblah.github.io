@@ -11,8 +11,13 @@
 </head>
 
 <body>
+  <div id="loading-screen" class="screen">
+    <div class="loading-animation"></div>
+    <p>Loading...</p>
+  </div>
+
   <div id="app">
-    <div id="start-screen" class="screen">
+    <div id="start-screen" class="screen hidden">
       <div class="auth-controls">
         <button id="btn-signup" class="btn primary">Sign Up</button>
         <button id="btn-login" class="btn primary">Log In</button>
@@ -131,9 +136,8 @@
       </div>
 
       <div class="controls">
-        <button id="btn-buy-5-health" class="btn">Buy 5 HP (1 diamond)</button>
-        <button id="btn-buy-10-health" class="btn">Buy 10 HP (2 diamonds)</button>
-        <button id="btn-buy-50-health" class="btn">Buy 50 HP (10 diamonds)</button>
+        <button id="btn-buy-health" class="btn">Buy <input type="number" id="health-amount" min="5" step="5" value="5">
+          health</button>
         <button id="btn-shop-back" class="btn">Back</button>
       </div>
     </div>

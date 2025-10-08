@@ -6,6 +6,7 @@
   });
 
   const $ = (sel) => document.querySelector(sel);
+  const loadingScreen = $("#loading-screen");
 
   // ---- Game data definitions ----
   const SKILLS = {
@@ -134,9 +135,8 @@
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
   const shopTacticsEl = $("#shop-tactics");
-  const btnBuy5Health = $("#btn-buy-5-health");
-  const btnBuy10Health = $("#btn-buy-10-health");
-  const btnBuy50Health = $("#btn-buy-50-health");
+  const btnBuyHealth = $("#btn-buy-health");
+  const healthAmountInput = $("#health-amount");
   const btnShopBack = $("#btn-shop-back");
 
   const signupScreen = $("#signup-screen");
@@ -427,7 +427,7 @@
   let battlePlayerSkills = {}, battlePlayerTactics = {};
   let battleOppSkills = {}, battleOppTactics = {};
   let opponentHealth = 0, opponentSkills = [];
-  let state = { phase: "pre", battle: null };
+  let state = { battle: null };
 
   let scaleInterval = null;
   let scaleDirection = 1;
@@ -635,9 +635,17 @@
     renderShopUI(); renderStartUI();
     showMessage(`Bought ${price * 5} health. You have ${userData.maxHealth} health now.`, 'success');
   }
-  btnBuy5Health.addEventListener('click', () => { buyHealth(1); });
-  btnBuy10Health.addEventListener('click', () => { buyHealth(2); });
-  btnBuy50Health.addEventListener('click', () => { buyHealth(10); });
+  btnBuyHealth.addEventListener('click', () => {
+    const amount = parseInt(healthAmountInput.value, 10);
+    if (isNaN(amount) || amount < 5 || amount % 5 !== 0) {
+      showMessage("Enter a multiple of 5 (minimum 5).", 'error');
+      return;
+    }
+    buyHealth(amount / 5);
+  });
+  healthAmountInput.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
 
   // ---- Battle lifecycle ----
   function prepareBattle() {
@@ -697,8 +705,6 @@
       updateTurnIndicator();
       if (state.battle.currentActor === 'opponent') opponentAIChoose();
     }, startPeriodMs + 50);
-
-    state.phase = 'inBattle';
     startLoop();
   }
 
@@ -822,7 +828,8 @@
 
   // UI screens
   async function showStart() {
-    state.phase = 'startScreen';
+    userData = await loadSave();
+    loadingScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.add('hidden');
@@ -830,7 +837,6 @@
     signupScreen.classList.add('hidden');
     loginScreen.classList.add('hidden');
     verifyScreen.classList.add('hidden');
-    userData = await loadSave();
     renderStartUI();
   }
   function showBattle() {
@@ -944,7 +950,6 @@
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     state.battle = null;
-    state.phase = 'startScreen';
   }
 
   function loop(ts) {
