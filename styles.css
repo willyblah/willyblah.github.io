@@ -23,6 +23,11 @@ body {
 a:link,
 a:visited {
   color: lightblue;
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  color: rgb(100, 170, 230);
 }
 
 .screen {
@@ -229,11 +234,20 @@ a:visited {
   color: white;
   padding: 8px;
   border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .level-dropdown option {
   background: var(--card);
   color: var(--muted);
+}
+
+.level-dropdown:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.level-dropdown:focus {
+  outline: none;
 }
 
 /* Battle layout */
