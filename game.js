@@ -52,6 +52,7 @@
   };
   let currentLevel = 'normal';
 
+  let loadError = null;
   async function loadSave() {
     const currentUser = AV.User.current();
     if (!currentUser) return getDefaultSave();
@@ -68,7 +69,7 @@
         ownedTactics: currentUser.get('ownedTactics') || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
       };
     } catch (e) {
-      console.error("Load fail.", e);
+      loadError = `Load fail: ${e}`;
       return getDefaultSave();
     }
   }
@@ -92,7 +93,6 @@
       currentUser.set('ownedTactics', state.ownedTactics);
       await currentUser.save();
     } catch (e) {
-      console.error("Save fail.", e);
       showMessage("Failed to save progress.", 'error');
     }
   }
@@ -827,6 +827,7 @@
     loginScreen.classList.add('hidden');
     verifyScreen.classList.add('hidden');
     renderStartUI();
+    if (loadError) showMessage(loadError, 'error', 3000);
   }
   function showBattle() {
     startScreen.classList.add('hidden');
@@ -1035,7 +1036,7 @@
 
     // turn timer checks
     if (now < state.battle.startPeriodEnd) {
-      turnIndicatorEl.textContent = `Starting... ${Math.ceil((state.battle.startPeriodEnd - now) / 1000)}s`;
+      turnIndicatorEl.textContent = `Starting in ${Math.ceil((state.battle.startPeriodEnd - now) / 1000)}s`;
     } else {
       if (!state.battle.currentActor) {
         state.battle.currentActor = (Math.random() < 0.5) ? 'player' : 'opponent';
@@ -1307,7 +1308,7 @@
     if (!state.battle) return;
     const now = Date.now();
     if (now < state.battle.startPeriodEnd) {
-      turnIndicatorEl.textContent = `Starting... ${Math.ceil((state.battle.startPeriodEnd - now) / 1000)}s`;
+      turnIndicatorEl.textContent = `Starting in ${Math.ceil((state.battle.startPeriodEnd - now) / 1000)}s`;
       return;
     }
     const actor = state.battle.currentActor;
@@ -1533,7 +1534,6 @@
     }
   }
 
-  // End battle
   async function finalizeEndBattle(playerWon, message) {
     if (!state.battle || state.battle.battleOver) return;
     state.battle.battleOver = true;

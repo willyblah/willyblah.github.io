@@ -4,6 +4,7 @@
   --muted: #94a3b8;
   --danger: #ef4444;
   --glass: rgba(255, 255, 255, 0.03);
+  --glass-light: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -58,7 +59,7 @@ a:visited {
 }
 
 .loading-animation {
-  border: 6px solid rgba(255, 255, 255, 0.1);
+  border: 6px solid var(--glass-light);
   border-top: 6px solid var(--accent);
   border-radius: 50%;
   width: 50px;
@@ -118,27 +119,28 @@ a:visited {
 
 .btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-light);
   padding: 8px 14px;
   border-radius: 8px;
   color: inherit;
-  cursor: pointer
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn.primary {
-  background: linear-gradient(90deg, var(--accent), #5b21b6);
+  background: var(--accent);
   border: none;
   color: white
 }
 
 .btn.shop {
-  background: linear-gradient(90deg, #f59e0b, #f97316);
+  background: #ec6c10;
   border: none;
   color: white;
 }
 
 .btn.danger {
-  background: linear-gradient(90deg, var(--danger), #b91c1c);
+  background: var(--danger);
   border: none;
   color: white
 }
@@ -146,6 +148,22 @@ a:visited {
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  background: #dbe6f015;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: #8b5cf6;
+}
+
+.btn.shop:hover:not(:disabled) {
+  background: #f1911c;
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: #f87171;
 }
 
 .hint {
@@ -206,8 +224,8 @@ a:visited {
 }
 
 .level-dropdown {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-light);
+  border: 1px solid var(--glass-light);
   color: white;
   padding: 8px;
   border-radius: 6px;
@@ -258,7 +276,6 @@ a:visited {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.03);
   margin-top: 2px;
 }
 
@@ -279,6 +296,12 @@ a:visited {
   gap: 8px;
   min-width: 120px;
   position: relative;
+  transition: all 0.2s ease;
+}
+
+.skill-btn:hover:not(:disabled),
+.tactic-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .skill-count {
@@ -315,7 +338,7 @@ a:visited {
 #health-amount {
   width: 60px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: inherit;
   text-align: center;
   font-size: 14px;
@@ -331,7 +354,7 @@ a:visited {
 .tooltip {
   position: fixed;
   background: #071426;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-light);
   padding: 8px;
   border-radius: 6px;
   color: #cfe9ff;
@@ -397,7 +420,7 @@ a:visited {
   border-radius: 6px;
   background: var(--glass);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-light);
   margin-bottom: 12px;
 }
 
