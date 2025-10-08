@@ -804,18 +804,7 @@
     }
     submitBtn.disabled = true;
     try {
-      let usernameToUse = identifier;
-      if (identifier.includes('@')) {
-        const query = new AV.Query('_User');
-        query.equalTo('email', identifier);
-        const user = await query.first();
-        if (!user) {
-          showMessage("No user found with that email.", 'error');
-          return;
-        }
-        usernameToUse = user.get('username');
-      }
-      const loggedInUser = await AV.User.logIn(usernameToUse, password);
+      const loggedInUser = await AV.User.logIn(identifier, password);
       await loggedInUser.fetch();
       userData = await loadSave();
       showStart();
