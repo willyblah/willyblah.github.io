@@ -867,7 +867,7 @@
 
     startScale();
   }
-  function showSignup() {
+  async function showSignup() {
     startScreen.classList.add('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.add('hidden');
@@ -875,8 +875,9 @@
     loginScreen.classList.add('hidden');
     verifyScreen.classList.add('hidden');
     signupScreen.classList.remove('hidden');
+    if (await inChina()) showMessage("Sign up might not be available in your country or region.", "warn", 3000);
   }
-  function showLogin() {
+  async function showLogin() {
     startScreen.classList.add('hidden');
     battleScreen.classList.add('hidden');
     shopScreen.classList.add('hidden');
@@ -884,6 +885,7 @@
     signupScreen.classList.add('hidden');
     verifyScreen.classList.add('hidden');
     loginScreen.classList.remove('hidden');
+    if (await inChina()) showMessage("Log in might not be available in your country or region.", "warn", 3000);
   }
   function showVerify() {
     startScreen.classList.add('hidden');
@@ -1566,13 +1568,5 @@
     }
   }
 
-  async function init() {
-    if (await inChina()) {
-      $("#block-screen").classList.remove('hidden');
-      startScreen.classList.add('hidden');
-    } else {
-      showStart();
-    }
-  }
-  init();
+  showStart();
 })();
