@@ -166,8 +166,6 @@
   const TILE = 40;
   const MAP_W = Math.floor(canvas.width / TILE);
   const MAP_H = Math.floor(canvas.height / TILE);
-  const PLAYER_SPEED = 140; // px/s
-  const OPP_SPEED = 120;
   const LAVA_DAMAGE = 10;
   const CACTUS_DPS = 5;
   const LAVA_TICK_INTERVAL = 500;
@@ -653,8 +651,8 @@
     spawns = spawnPositions(grid);
 
     const startHp = userData.maxHealth;
-    player = new Actor(spawns.first[0], spawns.first[1], startHp, PLAYER_SPEED, '#10b981');
-    opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, OPP_SPEED, '#ef4444');
+    player = new Actor(spawns.first[0], spawns.first[1], startHp, 140, '#10b981');
+    opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, 140, '#ef4444');
 
     // opponent AI chase tracking
     opponent.isChasing = false;
