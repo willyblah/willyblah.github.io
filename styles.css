@@ -326,6 +326,7 @@ b {
   color: var(--muted)
 }
 
+/* Shop Styles */
 .shop-lists {
   display: flex;
   gap: 12px
@@ -364,6 +365,11 @@ b {
 #health-amount:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+#btn-buy-health,
+#btn-shop-back {
+  height: 42px;
 }
 
 .tooltip {

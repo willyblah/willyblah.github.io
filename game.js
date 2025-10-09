@@ -455,7 +455,6 @@
       attachTooltip(btn, `${k}<br>${s.desc}<br>Price: ${s.price || '—'}`);
       startSkillsEl.appendChild(btn);
     });
-
     // tactics
     const ownedTactics = Object.keys(TACTICS).filter(k => userData.ownedTactics[k] && userData.ownedTactics[k] !== 0);
     ownedTactics.forEach((k) => {
@@ -475,7 +474,7 @@
       btnLogin.classList.add('hidden');
       btnLogout.classList.remove('hidden');
       userGreeting.classList.remove('hidden');
-      userGreeting.textContent = `${currentUser.get('username')}`;
+      userGreeting.textContent = currentUser.get('username');
       if (!currentUser.get('emailVerified'))
         verifyHint.classList.remove('hidden');
       else
@@ -1422,15 +1421,8 @@
 
   function moveTowards(actor, tx, ty) {
     const path = findPath(actor.x, actor.y, tx, ty);
-    if (path && path.length > 1) {
+    if (path && path.length > 1)
       followPath(actor, path);
-      return;
-    }
-    // fallback: direct chase
-    const dx = tx - actor.x; const dy = ty - actor.y;
-    const mag = Math.hypot(dx, dy) || 1;
-    actor.vx = (dx / mag) * actor.speed;
-    actor.vy = (dy / mag) * actor.speed;
   }
 
   function moveAway(actor, fromX, fromY) {
@@ -1447,17 +1439,7 @@
     }
     if (best) {
       const path = findPath(actor.x, actor.y, best.x, best.y);
-      if (path && path.length > 1) { followPath(actor, path); return; }
-      // fallback: direct away vector
-      const dx = actor.x - fromX; const dy = actor.y - fromY;
-      const mag = Math.hypot(dx, dy) || 1;
-      actor.vx = (dx / mag) * actor.speed;
-      actor.vy = (dy / mag) * actor.speed;
-    } else {
-      // wander: final fallback
-      const ang = Math.random() * Math.PI * 2;
-      actor.vx = Math.cos(ang) * (actor.speed * 0.6);
-      actor.vy = Math.sin(ang) * (actor.speed * 0.6);
+      if (path && path.length > 1) followPath(actor, path);
     }
   }
 
