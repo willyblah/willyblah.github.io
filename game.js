@@ -1257,7 +1257,6 @@
   // ---- Opponent AI ----
   function opponentAIChoose() {
     if (!state.battle || state.battle.currentActor !== 'opponent') return;
-
     if (!inRangeAndLOS(opponent, player)) {
       opponent.isChasing = true;
       return;
@@ -1268,6 +1267,11 @@
 
     setTimeout(() => {
       if (!state.battle || state.battle.currentActor !== 'opponent') return;
+
+      if (!inRangeAndLOS(opponent, player)) {
+        opponent.isChasing = true;
+        return;
+      }
 
       // if standing on hazard, try to move away first
       const tileHere = tileAt(opponent.x, opponent.y);
