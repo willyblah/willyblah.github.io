@@ -8,7 +8,7 @@
   const $ = (sel) => document.querySelector(sel);
   const loadingScreen = $("#loading-screen");
 
-  // ---- Game data definitions ----
+  // ---- Game data ----
   const SKILLS = {
     Spear: { attack: 5, acc: 0.5, price: 0, default: true, infinite: true, desc: "Attack 5, 50% accuracy." },
     Knife: { attack: 2, acc: 0.8, price: 0, default: true, infinite: true, desc: "Attack 2, 80% accuracy." },
@@ -158,7 +158,6 @@
   const verifyHint = $("#verify-hint");
   const userGreeting = $("#user-greeting");
 
-  // Canvas
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
 
@@ -171,10 +170,8 @@
   const LAVA_TICK_INTERVAL = 500;
   const CACTUS_TICK_INTERVAL = 250;
 
-  // Map generation
   function generateMap() {
     const grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(0));
-    // make island a bit larger relative to map
     const ox = 1;
     const oy = 1;
     const islandW = Math.max(1, MAP_W - 2 * ox);
@@ -186,7 +183,6 @@
       }
     }
 
-    // keep spawn corners valid
     grid[oy + 1][ox + 1] = 1;
     grid[oy + islandH - 2][ox + islandW - 2] = 1;
 
@@ -233,31 +229,26 @@
   function inBounds(r, c) {
     return r >= 0 && r < MAP_H && c >= 0 && c < MAP_W;
   }
-
   function walkableTile(r, c) {
     if (!inBounds(r, c)) return false;
     const t = grid[r][c];
-    return t !== 0 && t !== 2; // 0 = void, 2 = wall are blocked
+    return t !== 0 && t !== 2;
   }
-
   function tileCenter(c, r) {
     return { x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 };
   }
-
   function tileCost(r, c) {
     if (!inBounds(r, c)) return 9999;
     const t = grid[r][c];
     switch (t) {
-      case 1: return 1.0;   // land
-      case 3: return 1.2;   // water (slightly slower)
-      case 4: return 8.0;   // lava (avoid unless necessary)
-      case 5: return 4.0;   // cactus (costly but less than lava)
-      case 6: return 1.5;   // cobweb (slower)
-      default: return 9999; // void / wall (not walkable)
+      case 1: return 1.0;
+      case 3: return 1.2;
+      case 4: return 8.0;
+      case 5: return 4.0;
+      case 6: return 1.5;
+      default: return 9999;
     }
   }
-
-  // Octile heuristic for 8-neighbour grid (admissible when multiplied by minimum tile cost)
   function octileHeuristic(r, c, tr, tc, minTileCost = 1.0) {
     const dx = Math.abs(c - tc);
     const dy = Math.abs(r - tr);
@@ -283,7 +274,6 @@
     const startKey = sr + ',' + sc;
     const targetKey = tr + ',' + tc;
 
-    // Precompute minimal possible tile cost (used for admissible heuristic)
     let minTile = Infinity;
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
@@ -293,12 +283,10 @@
     }
     if (!isFinite(minTile)) minTile = 1.0;
 
-    // A* structures
-    const open = new Map(); // key -> node
+    const open = new Map();
     const closed = new Set();
 
     function neighborsOf(r, c) {
-      // 8-directional neighbors with movement multiplier (1 for straight, sqrt2 for diagonal)
       return [
         { r: r - 1, c: c, moveCost: 1 },
         { r: r + 1, c: c, moveCost: 1 },
@@ -315,7 +303,6 @@
     let iterations = 0;
 
     while (open.size && iterations++ < maxNodes) {
-      // find node with smallest f
       let bestKey = null; let bestF = Infinity;
       for (const [k, v] of open) {
         if (v.f < bestF) { bestF = v.f; bestKey = k; }
@@ -326,7 +313,6 @@
       closed.add(curKey);
 
       if (curKey === targetKey) {
-        // reconstruct path (list of {r,c,x,y})
         const path = [];
         let cur = current;
         while (cur) {
@@ -343,14 +329,12 @@
         if (closed.has(key)) continue;
         if (!walkableTile(nb.r, nb.c)) continue;
 
-        // Additional check for cutting corners: disallow diagonal movement through two adjacent walls
         if (nb.moveCost === Math.SQRT2) {
           const cut1 = current.r + (nb.r - current.r), cut1c = current.c;
           const cut2 = current.r, cut2c = current.c + (nb.c - current.c);
           if (!walkableTile(cut1, cut1c) || !walkableTile(cut2, cut2c)) continue;
         }
 
-        // g cost: current.g + movementCost * average tileCost of current and neighbour
         const moveBase = nb.moveCost;
         const stepCost = (tileCost(current.r, current.c) + tileCost(nb.r, nb.c)) * 0.5;
         const gScore = current.g + moveBase * stepCost;
@@ -363,20 +347,18 @@
       }
     }
 
-    return null; // failed to find path
+    return null;
   }
 
   function followPath(actor, path) {
     if (!path || path.length < 2) return false;
-    // find which path node the actor is currently closest to
     let idx = 0;
     let best = Infinity;
-    for (let i = 0; i < Math.min(path.length, 4); i++) { // only check first few nodes
+    for (let i = 0; i < Math.min(path.length, 4); i++) {
       const dx = actor.x - path[i].x, dy = actor.y - path[i].y;
       const d = dx * dx + dy * dy;
       if (d < best) { best = d; idx = i; }
     }
-    // choose next node
     const nextIndex = Math.min(path.length - 1, idx + 1);
     const next = path[nextIndex];
     const dx = next.x - actor.x, dy = next.y - actor.y;
@@ -386,7 +368,6 @@
     return true;
   }
 
-  // Entities
   function spawnPositions(grid) {
     let first = null, second = null;
     for (let r = 0; r < MAP_H; r++) {
@@ -654,11 +635,9 @@
     player = new Actor(spawns.first[0], spawns.first[1], startHp, 140, '#10b981');
     opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, 140, '#ef4444');
 
-    // opponent AI chase tracking
     opponent.isChasing = false;
     opponent.lastPostChase = 0;
 
-    // Prepare battle owned counts
     battlePlayerSkills = {}; battlePlayerTactics = {};
     battleOppSkills = {}; battleOppTactics = {};
 
@@ -814,82 +793,38 @@
   });
 
   // UI screens
+  const screens = { startScreen, battleScreen, shopScreen, scaleScreen, signupScreen, loginScreen, verifyScreen };
+  function showScreen(name) {
+    Object.keys(screens).forEach(key => {
+      screens[key].classList.toggle('hidden', name !== key);
+    });
+  }
   async function showStart() {
     userData = await loadSave();
     loadingScreen.classList.add('hidden');
-    startScreen.classList.remove('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
+    showScreen('startScreen');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
   }
-  function showBattle() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.remove('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
-  }
-  function showShop() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.remove('hidden');
-    scaleScreen.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
-  }
+  function showBattle() { showScreen('battleScreen'); }
+  function showShop() {  showScreen('shopScreen'); }
   function showScale() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.remove('hidden');
+    showScreen('scaleScreen');
     opponentPreview.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
-
     btnStartBattle.disabled = true;
     btnStopScale.disabled = false;
     btnStopScale.textContent = 'Stop';
-
     startScale();
   }
   async function showSignup() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
-    signupScreen.classList.remove('hidden');
+    showScreen('signupScreen');
     if (await inChina()) showMessage("Sign up might not be available in your country or region.", "warn", 3000);
   }
   async function showLogin() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    verifyScreen.classList.add('hidden');
-    loginScreen.classList.remove('hidden');
+    showScreen('loginScreen');
     if (await inChina()) showMessage("Log in might not be available in your country or region.", "warn", 3000);
   }
-  function showVerify() {
-    startScreen.classList.add('hidden');
-    battleScreen.classList.add('hidden');
-    shopScreen.classList.add('hidden');
-    scaleScreen.classList.add('hidden');
-    signupScreen.classList.add('hidden');
-    loginScreen.classList.add('hidden');
-    verifyScreen.classList.remove('hidden');
-  }
+  function showVerify() { showScreen('verifyScreen'); }
 
   function startScale() {
     scaleStopped = false;
@@ -920,7 +855,7 @@
     opponentStrength = scalePosition / 100;
     opponentPreview.classList.remove('hidden');
     btnStartBattle.disabled = false;
-    // Opponent preview
+
     opponentHealth = calculateOppHealth();
     previewHealthEl.textContent = opponentHealth;
     opponentSkills = calculateOppSkills();
@@ -953,7 +888,7 @@
     if (!state.battle) return;
     const now = Date.now();
 
-    // movement: player via keys
+    // movement
     let spd = player.speed;
     if (player.hasEffect && player.hasEffect('speed')) { spd *= 1.5; }
     if (keysDown['w'] || keysDown['a'] || keysDown['s'] || keysDown['d']) {
@@ -976,13 +911,11 @@
     if (currentActor === 'opponent' || !opponent.hasOwnProperty('aiTimer') || opponent.aiTimer < Date.now()) {
       const dist = Math.hypot(player.x - opponent.x, player.y - opponent.y);
       if (currentActor === 'player') {
-        // move away if too close
         if (dist < 260) moveAway(opponent, player.x, player.y);
         else { opponent.vx *= 0.85; opponent.vy *= 0.85; }
         if (opponent.isChasing)
           opponent.isChasing = false;
       } else {
-        // Chase player
         if (!inRangeAndLOS(opponent, player)) {
           const path = findPath(opponent.x, opponent.y, player.x, player.y);
           if (path) followPath(opponent, path);
@@ -1005,9 +938,7 @@
     handleHazards(player, dt);
     handleHazards(opponent, dt);
 
-    // check falling into void
     if (isVoidAt(player.x, player.y)) {
-      // animate player hp bar empty then finalize
       player.hp = 0;
       animateHPChange(playerHpFill, 0);
       setTimeout(() => finalizeEndBattle(false, "You fell into the void."), 700);
@@ -1020,7 +951,6 @@
       return;
     }
 
-    // check death and allow bar to animate before finalizing
     if (player.isDead()) {
       animateHPChange(playerHpFill, 0);
       setTimeout(() => finalizeEndBattle(false, "You died."), 700);
@@ -1059,7 +989,6 @@
     if (tileUnder === 3) factor = 0.6;
     if (tileUnder === 6) factor = 0.5;
 
-    // Original position
     const originalX = actor.x;
     const originalY = actor.y;
 
@@ -1080,22 +1009,18 @@
       }
     }
 
-    // Check if we moved into a wall
     if (tileAt(actor.x, actor.y) === 2) {
-      // Revert position
       actor.x = originalX;
       actor.y = originalY;
 
-      // Try X movement only
       actor.x += actor.vx * dt * factor;
       if (tileAt(actor.x, actor.y) === 2)
         actor.x = originalX;
-      // Try Y movement only
+
       actor.y += actor.vy * dt * factor;
       if (tileAt(actor.x, actor.y) === 2)
         actor.y = originalY;
 
-      // Stop if still blocked
       if (tileAt(actor.x, actor.y) === 2) {
         actor.x = originalX;
         actor.y = originalY;
@@ -1387,7 +1312,7 @@
         return;
       }
 
-      // pick best expected damage skill
+      // pick best skill
       let bestSkill = null, bestVal = -Infinity;
       for (const k of candidates) {
         const s = SKILLS[k];
@@ -1497,7 +1422,7 @@
       followPath(actor, path);
       return;
     }
-    // fallback: direct chase if no path
+    // fallback: direct chase
     const dx = tx - actor.x; const dy = ty - actor.y;
     const mag = Math.hypot(dx, dy) || 1;
     actor.vx = (dx / mag) * actor.speed;

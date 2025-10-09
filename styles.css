@@ -30,6 +30,10 @@ a:hover {
   color: rgb(100, 170, 230);
 }
 
+b {
+  font-weight: 600;
+}
+
 .screen {
   max-width: 1200px;
   margin: 0 auto;
@@ -135,19 +139,16 @@ a:hover {
 .btn.primary {
   background: var(--accent);
   border: none;
-  color: white
 }
 
 .btn.shop {
   background: #ec6c10;
   border: none;
-  color: white;
 }
 
 .btn.danger {
   background: var(--danger);
   border: none;
-  color: white
 }
 
 .btn:disabled {
