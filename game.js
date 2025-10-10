@@ -66,7 +66,8 @@
         diamonds: currentUser.get('diamonds') || 0,
         maxHealth: currentUser.get('maxHealth') || 10,
         ownedSkills,
-        ownedTactics: currentUser.get('ownedTactics') || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
+        ownedTactics: currentUser.get('ownedTactics') || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
+        profile: currentUser.get('profile') || null
       };
     } catch (e) {
       loadError = `Load fail: ${e}`;
@@ -79,7 +80,8 @@
       diamonds: 0,
       maxHealth: 10,
       ownedSkills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].default ? Infinity : 0])),
-      ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0]))
+      ownedTactics: Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
+      profile: null
     };
   }
 
@@ -91,6 +93,7 @@
       currentUser.set('maxHealth', state.maxHealth);
       currentUser.set('ownedSkills', state.ownedSkills);
       currentUser.set('ownedTactics', state.ownedTactics);
+      currentUser.set('profile', state.profile);
       await currentUser.save();
     } catch (e) {
       showMessage("Failed to save progress.", 'error');
@@ -107,6 +110,7 @@
 
   const startHealthEl = $("#start-health");
   const startDiamondsEl = $("#start-diamonds");
+  const startProfileEl = $("#start-profile");
   const startSkillsEl = $("#start-skills");
   const startTacticsEl = $("#start-tactics");
 
@@ -157,6 +161,14 @@
   const loginPassword = $("#login-password");
   const verifyHint = $("#verify-hint");
   const userGreeting = $("#user-greeting");
+
+  const profileScreen = $("#profile-screen");
+
+  const prizeScreen = $("#prize-screen");
+  const prizeDot = $("#prize-dot");
+  const btnStopPrize = $("#btn-stop-prize");
+  const prizeResult = $("#prize-result p");
+  const btnPrizeBack = $("#btn-prize-back");
 
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
@@ -414,6 +426,11 @@
   let scaleStopped = false;
   let opponentStrength = 0.5;
 
+  let prizeInterval = null;
+  let prizeDirection = 1;
+  let prizePosition = 0;
+  let prizeStopped = false;
+
   // keyboard
   const keysDown = {};
   window.addEventListener('keydown', (e) => {
@@ -440,6 +457,10 @@
   function renderStartUI() {
     startHealthEl.textContent = userData.maxHealth;
     startDiamondsEl.textContent = userData.diamonds;
+    if (AV.User.current() && userData.profile) {
+      startProfileEl.textContent = userData.profile;
+      startProfileEl.classList.remove('hidden');
+    } else startProfileEl.classList.add('hidden');
     startSkillsEl.innerHTML = "";
     startTacticsEl.innerHTML = "";
 
@@ -672,7 +693,8 @@
       currentActor: null,
       turnEndTime: null,
       turnTimeout: 10000,
-      battleOver: false
+      battleOver: false,
+      startTime: Date.now()
     };
 
     setTimeout(() => {
@@ -783,16 +805,49 @@
       const loggedInUser = await AV.User.logIn(identifier, password);
       await loggedInUser.fetch();
       userData = await loadSave();
-      showStart();
+      if (!userData.profile && loggedInUser.get('emailVerified')) showProfileSelect();
+      else showStart();
     } catch (err) {
       showMessage(`Log in failed: ${err.message}`, 'error', 3000);
     } finally {
       submitBtn.disabled = false;
     }
   });
+  async function selectProfile(profileName) {
+    userData.profile = profileName;
+    await save(userData);
+    showStart();
+  }
+  $("#btn-warrior").addEventListener('click', () => selectProfile('Warrior'));
+  $("#btn-miner").addEventListener('click', () => selectProfile('Miner'));
+  $("#btn-trickster").addEventListener('click', () => selectProfile('Trickster'));
+  btnStopPrize.addEventListener('click', () => {
+    if (prizeStopped) return;
+    clearInterval(prizeInterval);
+    prizeStopped = true;
+    btnStopPrize.disabled = true;
+    prizeResult.parentNode.classList.remove('hidden');
+    if (prizePosition > 50) {
+      const diamondGain = Math.floor(Math.random() * 8);
+      if (Math.random() < 0.5) {
+        const healthGain = diamondGain * 5;
+        userData.maxHealth += healthGain;
+        prizeResult.innerHTML = `Prize: <b>${healthGain} health</b>!`;
+      } else {
+        userData.diamonds += diamondGain;
+        prizeResult.innerHTML = `Prize: <b>${diamondGain} diamond(s)</b>!`;
+      }
+      save(userData);
+    } else {
+      prizeResult.textContent = 'Sorry, no prize.';
+    }
+  });
+  btnPrizeBack.addEventListener('click', () => {
+    showStart();
+  });
 
   // UI screens
-  const screens = { startScreen, battleScreen, shopScreen, scaleScreen, signupScreen, loginScreen, verifyScreen };
+  const screens = { startScreen, battleScreen, shopScreen, scaleScreen, signupScreen, loginScreen, verifyScreen, profileScreen, prizeScreen };
   function showScreen(name) {
     Object.keys(screens).forEach(key => {
       screens[key].classList.toggle('hidden', name !== key);
@@ -801,12 +856,17 @@
   async function showStart() {
     userData = await loadSave();
     loadingScreen.classList.add('hidden');
+    const currentUser = AV.User.current();
+    if (currentUser && currentUser.get('emailVerified') && !userData.profile) {
+      showProfileSelect();
+      return;
+    }
     showScreen('startScreen');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
   }
   function showBattle() { showScreen('battleScreen'); }
-  function showShop() {  showScreen('shopScreen'); }
+  function showShop() { showScreen('shopScreen'); }
   function showScale() {
     showScreen('scaleScreen');
     opponentPreview.classList.add('hidden');
@@ -814,6 +874,22 @@
     btnStopScale.disabled = false;
     btnStopScale.textContent = 'Stop';
     startScale();
+  }
+  function showPrize() {
+    showScreen('prizeScreen');
+    prizeResult.parentNode.classList.add('hidden');
+    btnStopPrize.disabled = false;
+    btnStopPrize.textContent = 'Stop';
+    prizePosition = 0;
+    prizeDirection = 1;
+    prizeDot.style.left = '0%';
+    prizeStopped = false;
+    prizeInterval = setInterval(() => {
+      prizePosition += prizeDirection * 5;
+      if (prizePosition >= 100) { prizePosition = 100; prizeDirection = -1; }
+      else if (prizePosition <= 0) { prizePosition = 0; prizeDirection = 1; }
+      prizeDot.style.left = prizePosition + '%';
+    }, 30);
   }
   async function showSignup() {
     showScreen('signupScreen');
@@ -824,6 +900,7 @@
     if (await inChina()) showMessage("Log in might not be available in your country or region.", "warn", 3000);
   }
   function showVerify() { showScreen('verifyScreen'); }
+  function showProfileSelect() { showScreen('profileScreen'); }
 
   function startScale() {
     scaleStopped = false;
@@ -1323,7 +1400,9 @@
         const tile = tileAt(opponent.x, opponent.y);
         if (k === "Minitrident" && tile === 3) attack += 30;
         else if (k === "Rage" && tile === 5) attack += 50;
-        const expected = attack * (s.acc || 1);
+        let expectedAcc = s.acc || 1;
+        if (userData.profile === 'Warrior') expectedAcc = 0.5;
+        const expected = attack * expectedAcc;
         if (expected > bestVal) { bestVal = expected; bestSkill = k; }
       }
 
@@ -1356,7 +1435,9 @@
       return;
     }
     const attackVal = getSkillAttackValue(name, opponent);
-    if (inRangeAndLOS(opponent, player) && Math.random() < (SKILLS[name].acc || 1)) {
+    let acc = SKILLS[name].acc || 1;
+    if (userData.profile === 'Warrior') acc = 0.5;
+    if (inRangeAndLOS(opponent, player) && Math.random() < acc) {
       player.applyDamage(attackVal);
       showMessage(`Opponent used <strong>${name}</strong>! You lose ${attackVal} HP.`, 'error');
       animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
@@ -1446,18 +1527,27 @@
   async function finalizeEndBattle(playerWon, message) {
     if (!state.battle || state.battle.battleOver) return;
     state.battle.battleOver = true;
-    let awarded = 0;
+
+    let awarded = Math.floor(opponentStrength * 15);
+    if (currentLevel === 'normal') awarded += 2;
+    else awarded += 12;
     if (playerWon) {
-      // calculate reward
-      awarded = Math.floor(opponentStrength * 15);
-      if (currentLevel === 'normal') awarded += 2;
-      else awarded += 10;
+      if (userData.profile === 'Miner') awarded *= 2;
       userData.diamonds = (userData.diamonds || 0) + awarded;
       await save(userData);
+      showMessage(`You win! ${message} Diamonds earned: ${awarded}`, 'success');
+    } else {
+      showMessage(`You lose. ${message}`, 'error');
     }
-    showMessage((playerWon ? "You win! " : "You lose. ") + message + (playerWon ? ` Diamonds earned: ${awarded}` : ""), playerWon ? 'success' : 'error');
+    if (userData.profile === 'Trickster') {
+      if (Date.now() - state.battle.startTime < 10000) {
+        showMessage('Sorry, no cheating the prize! You must battle for a while.', 'warn', 3000);
+      } else {
+        showPrize();
+        return;
+      }
+    }
     showStart();
-    renderStartUI();
   }
 
   async function inChina() {

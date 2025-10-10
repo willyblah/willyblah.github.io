@@ -29,6 +29,7 @@
       <div class="hud">
         <div><b>Health: <span id="start-health">--</span></b></div>
         <div><b>Diamonds: <span id="start-diamonds">--</span></b></div>
+        <div><b>Profile: <span id="start-profile">--</span></b></div>
       </div>
 
       <div class="panel">
@@ -46,7 +47,7 @@
         <button id="btn-reset" class="btn danger">Reset Progress</button>
       </div>
 
-      <p class="hint">Version: 1.5.1</p>
+      <p class="hint">Version: 1.5.2</p>
       <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a>
       <p id="verify-hint" class="hint verify-hint hidden">Please verify your email to save progress.</p>
     </div>
@@ -174,6 +175,30 @@
         <button id="btn-verify-back" class="btn primary">Back to Start</button>
       </div>
     </div>
+  </div>
+
+  <div id="profile-screen" class="screen hidden">
+    <h2>Choose Your Profile</h2>
+    <div class="panel profile-panel">
+      <button id="btn-warrior" class="btn profile">Warrior: Opponent's accuracy is always 50%.</button>
+      <button id="btn-miner" class="btn profile">Miner: Get twice as many diamonds when you win.</button>
+      <button id="btn-trickster" class="btn profile">Trickster: Get a (small) prize, even if you lost.</button>
+    </div>
+  </div>
+
+  <div id="prize-screen" class="screen hidden">
+    <h2>Trickster Prize</h2>
+    <div class="scale-container">
+      <div class="scale-labels"><span>No Prize</span><span>Prize</span></div>
+      <div class="scale-track">
+        <div id="prize-dot" class="scale-dot"></div>
+      </div>
+      <button id="btn-stop-prize" class="btn primary">Stop</button>
+    </div>
+    <div id="prize-result" class="hidden">
+      <p></p>
+    </div>
+    <div class="controls"><button id="btn-prize-back" class="btn">Back</button></div>
   </div>
 
   <div id="tooltip" class="tooltip hidden"></div>
