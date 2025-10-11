@@ -611,7 +611,7 @@
     userData.diamonds -= s.price;
     userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
     await save(userData);
-    renderShopUI(); renderStartUI();
+    renderShopUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
   async function buyTactic(name) {
@@ -620,7 +620,7 @@
     userData.diamonds -= t.price;
     userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
     await save(userData);
-    renderShopUI(); renderStartUI();
+    renderShopUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
   async function buyHealth(price) {
@@ -628,7 +628,7 @@
     userData.diamonds -= price;
     userData.maxHealth += price * 5;
     await save(userData);
-    renderShopUI(); renderStartUI();
+    renderShopUI();
     showMessage(`Bought ${price * 5} health. You have ${userData.maxHealth} health now.`, 'success');
   }
   btnBuyHealth.addEventListener('click', () => {
