@@ -456,10 +456,8 @@
   function renderStartUI() {
     startHealthEl.textContent = userData.maxHealth;
     startDiamondsEl.textContent = userData.diamonds;
-    if (AV.User.current() && userData.profile) {
-      startProfileEl.textContent = userData.profile;
-      startProfileEl.classList.remove('hidden');
-    } else startProfileEl.classList.add('hidden');
+    if (userData.profile) startProfileEl.textContent = userData.profile;
+    else startProfileEl.textContent = 'None';
     startSkillsEl.innerHTML = "";
     startTacticsEl.innerHTML = "";
 
