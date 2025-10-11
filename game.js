@@ -550,7 +550,7 @@
   }
 
   function renderShopUI() {
-    shopDiamondsEl.textContent = userData.diamonds;
+    shopDiamondsEl.textContent = userData.diamonds + (userData.profile === 'Villager' ? '  (50% off!)' : '');
     shopSkillsEl.innerHTML = "";
     shopTacticsEl.innerHTML = "";
     Object.keys(SKILLS).forEach(k => {
@@ -559,7 +559,7 @@
       row.className = 'shop-item';
       row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${s.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${s.price ? s.price : '—'}</div>
+        <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? s.price / 2 : s.price) : '—'}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => {
@@ -573,7 +573,7 @@
       row.className = 'shop-item';
       row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${t.price}</div>
+        <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? t.price / 2 : t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => {
@@ -607,17 +607,19 @@
       showMessage(`<strong>${name}</strong> cannot be purchased.`, 'warn');
       return;
     }
-    if (userData.diamonds < s.price) { showMessage("Not enough diamonds.", 'error'); return; }
-    userData.diamonds -= s.price;
+    const price = s.price;
+    if (userData.profile === 'Villager') price /= 2;
+    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+    userData.diamonds -= price;
     userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
     await save(userData);
     renderShopUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
   async function buyTactic(name) {
-    const t = TACTICS[name];
-    if (userData.diamonds < t.price) { showMessage("Not enough diamonds.", 'error'); return; }
-    userData.diamonds -= t.price;
+    const price = TACTICS[name].price;
+    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+    userData.diamonds -= price;
     userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
     await save(userData);
     renderShopUI();
@@ -653,7 +655,6 @@
     opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, 140, '#ef4444');
 
     opponent.isChasing = false;
-    opponent.lastPostChase = 0;
 
     battlePlayerSkills = {}; battlePlayerTactics = {};
     battleOppSkills = {}; battleOppTactics = {};
@@ -811,6 +812,7 @@
   $("#btn-warrior").addEventListener('click', () => selectProfile('Warrior'));
   $("#btn-miner").addEventListener('click', () => selectProfile('Miner'));
   $("#btn-trickster").addEventListener('click', () => selectProfile('Trickster'));
+  $("#btn-villager").addEventListener('click', () => selectProfile('Villager'));
   btnStopPrize.addEventListener('click', () => {
     if (prizeStopped) return;
     clearInterval(prizeInterval);
@@ -839,9 +841,7 @@
   // UI screens
   const screens = { startScreen, battleScreen, shopScreen, scaleScreen, signupScreen, loginScreen, verifyScreen, profileScreen, prizeScreen };
   function showScreen(name) {
-    Object.keys(screens).forEach(key => {
-      screens[key].classList.toggle('hidden', name !== key);
-    });
+    Object.values(screens).forEach(screen => screen.classList.toggle('hidden', screen !== screens[name]));
   }
   async function showStart() {
     userData = await loadSave();
