@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>The Game</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
 </head>
 
@@ -22,7 +23,7 @@
         <button id="btn-signup" class="btn primary">Sign Up</button>
         <button id="btn-login" class="btn primary">Log In</button>
         <span id="user-greeting" class="hidden"></span>
-        <button id="btn-logout" class="btn danger hidden">Log Out</button>
+        <button id="btn-logout" class="btn danger hidden"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
       </div>
 
       <h1 class="title">The Game</h1>
@@ -115,8 +116,8 @@
       </div>
 
       <div class="controls">
-        <button id="btn-start-battle" class="btn primary">Start Battle</button>
-        <button id="btn-scale-back" class="btn">Back</button>
+        <button id="btn-start-battle" class="btn primary"><i class="fa-solid fa-play"></i> Start Battle</button>
+        <button id="btn-scale-back" class="btn"><i class="fa-solid fa-arrow-left"></i> Back</button>
       </div>
     </div>
 
@@ -179,9 +180,12 @@
   <div id="profile-screen" class="screen hidden">
     <h2>Choose Your Profile</h2>
     <div class="panel profile-panel">
-      <button id="btn-warrior" class="btn profile">Warrior: Opponent's accuracy is always 50%.</button>
-      <button id="btn-miner" class="btn profile">Miner: Get twice as many diamonds when you win.</button>
-      <button id="btn-trickster" class="btn profile">Trickster: Get a (small) prize, even if you lost.</button>
+      <button id="btn-warrior" class="btn profile"><i class="fa-solid fa-gun"></i> Warrior: Opponent's accuracy is
+        always 50%.</button>
+      <button id="btn-miner" class="btn profile"><i class="fa-solid fa-person-digging"></i> Miner: Get twice as many
+        diamonds when you win.</button>
+      <button id="btn-trickster" class="btn profile"><i class="fa-solid fa-hat-wizard"></i> Trickster: Get a (small)
+        prize, even if you lost.</button>
     </div>
   </div>
 
