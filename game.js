@@ -124,7 +124,6 @@
   const btnBattle = $("#btn-battle");
   const btnShop = $("#btn-shop");
   const btnSurrender = $("#btn-surrender");
-  const btnReset = $("#btn-reset");
 
   const scaleScreen = $("#scale-screen");
   const scaleDot = $("#scale-dot");
@@ -728,13 +727,6 @@
   btnSurrender.addEventListener('click', () => {
     if (!state.battle) return;
     finalizeEndBattle(false, "You surrendered.");
-  });
-  btnReset.addEventListener('click', async () => {
-    if (!confirm("Reset all progress?")) return;
-    userData = getDefaultSave();
-    await save(userData);
-    renderStartUI();
-    showMessage("Progress reset.", 'info');
   });
   btnShopBack.addEventListener('click', () => {
     showStart();
