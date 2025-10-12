@@ -558,7 +558,7 @@
       const s = SKILLS[k];
       const row = document.createElement('div');
       row.className = 'shop-item';
-      row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${s.desc}</div></div>
+      row.innerHTML = `<div><b>${k}</b><div style="font-size:13px;color:var(--muted)">${s.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
         <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? Math.ceil(s.price / 2) : s.price) : '—'}</div>
         <button class="btn" data-name="${k}">Buy</button>
@@ -572,7 +572,7 @@
       const t = TACTICS[k];
       const row = document.createElement('div');
       row.className = 'shop-item';
-      row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
+      row.innerHTML = `<div><b>${k}</b><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
         <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? Math.ceil(t.price / 2) : t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
@@ -605,7 +605,7 @@
   async function buySkill(name) {
     const s = SKILLS[name];
     if (!s.price) {
-      showMessage(`<strong>${name}</strong> cannot be purchased.`, 'warn');
+      showMessage(`<b>${name}</b> cannot be purchased.`, 'warn');
       return;
     }
     const price = s.price;
@@ -615,7 +615,7 @@
     userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
     await save(userData);
     renderShopUI();
-    showMessage(`Bought <strong>${name}</strong>.`, 'success');
+    showMessage(`Bought <b>${name}</b>.`, 'success');
   }
   async function buyTactic(name) {
     const price = TACTICS[name].price;
@@ -625,7 +625,7 @@
     userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
     await save(userData);
     renderShopUI();
-    showMessage(`Bought <strong>${name}</strong>.`, 'success');
+    showMessage(`Bought <b>${name}</b>.`, 'success');
   }
   async function buyHealth(amount) {
     let price = amount / 5;
@@ -1238,24 +1238,24 @@
     if (Date.now() < state.battle.startPeriodEnd) return;
     if (state.battle.currentActor !== 'player') return;
     if (!battlePlayerSkills[name] || (battlePlayerSkills[name] <= 0 && battlePlayerSkills[name] !== Infinity)) {
-      showMessage(`No <strong>${name}</strong> left!`, 'warn');
+      showMessage(`No <b>${name}</b> left!`, 'warn');
       return;
     }
 
     const attackVal = getSkillAttackValue(name, player);
     if (inRangeAndLOS(player, opponent) && (Math.random() < (SKILLS[name].acc || 1))) {
       opponent.applyDamage(attackVal);
-      showMessage(`You used <strong>${name}</strong>! Opponent loses ${attackVal} HP.`, 'info');
+      showMessage(`You used <b>${name}</b>! Opponent loses ${attackVal} HP.`, 'info');
       animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
     } else if (!inRangeAndLOS(player, opponent)) {
-      showMessage(`You used <strong>${name}</strong>! Too far or blocked by wall.`, 'warn');
+      showMessage(`You used <b>${name}</b>! Too far or blocked by wall.`, 'warn');
     } else {
-      showMessage(`You used <strong>${name}</strong>! Missed!`, 'warn');
+      showMessage(`You used <b>${name}</b>! Missed!`, 'warn');
     }
 
     if (battlePlayerSkills[name] !== Infinity) {
       battlePlayerSkills[name] = Math.max(0, (battlePlayerSkills[name] || 0) - 1);
-      if (battlePlayerSkills[name] === 0) showMessage(`You have no <strong>${name}</strong> left.`, 'warn');
+      if (battlePlayerSkills[name] === 0) showMessage(`You have no <b>${name}</b> left.`, 'warn');
     }
     renderBattleUI(); // refresh UI skill counts
 
@@ -1271,17 +1271,17 @@
     if (name === "Dizzydizzy") {
       player.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
-      showMessage(`You used <strong>${name}</strong>! 2 extra turns.`, 'info');
+      showMessage(`You used <b>${name}</b>! 2 extra turns.`, 'info');
     } else if (name === "Pushie") {
       applyPush(opponent);
-      showMessage(`You used <strong>${name}</strong>! Opponent was pushed.`, 'info');
+      showMessage(`You used <b>${name}</b>! Opponent was pushed.`, 'info');
     } else if (name === "Speed") {
       player.applyEffect('speed', Date.now() + 10000);
-      showMessage(`You used <strong>${name}</strong>! Speed up 10s.`, 'info');
+      showMessage(`You used <b>${name}</b>! Speed up 10s.`, 'info');
     }
 
     battlePlayerTactics[name] = Math.max(0, battlePlayerTactics[name] - 1);
-    if (battlePlayerTactics[name] === 0) showMessage(`You have no <strong>${name}</strong> left.`, 'warn');
+    if (battlePlayerTactics[name] === 0) showMessage(`You have no <b>${name}</b> left.`, 'warn');
     renderBattleUI(); // refresh UI tactic counts
 
     nextTurnAfterAction('player');
@@ -1446,12 +1446,12 @@
     if (userData.profile === 'Warrior') acc = 0.5;
     if (inRangeAndLOS(opponent, player) && Math.random() < acc) {
       player.applyDamage(attackVal);
-      showMessage(`Opponent used <strong>${name}</strong>! You lose ${attackVal} HP.`, 'error');
+      showMessage(`Opponent used <b>${name}</b>! You lose ${attackVal} HP.`, 'error');
       animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
     } else if (!inRangeAndLOS(opponent, player)) {
-      showMessage(`Opponent used <strong>${name}</strong>! Too far or blocked by wall.`, 'info');
+      showMessage(`Opponent used <b>${name}</b>! Too far or blocked by wall.`, 'info');
     } else {
-      showMessage(`Opponent used <strong>${name}</strong>! Missed!`, 'info');
+      showMessage(`Opponent used <b>${name}</b>! Missed!`, 'info');
     }
     if (battleOppSkills[name] !== Infinity) battleOppSkills[name] = Math.max(0, battleOppSkills[name] - 1);
     nextTurnAfterAction('opponent');
@@ -1463,13 +1463,13 @@
     if (name === "Dizzydizzy") {
       opponent.extraTurns += 2;
       if (state.battle) state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
-      showMessage("Opponent used <strong>Dizzydizzy</strong>! They gain 2 extra turns.", 'warn');
+      showMessage("Opponent used <b>Dizzydizzy</b>! They gain 2 extra turns.", 'warn');
     } else if (name === "Pushie") {
       applyPush(player);
-      showMessage("Opponent used <strong>Pushie</strong>! You were pushed.", 'warn');
+      showMessage("Opponent used <b>Pushie</b>! You were pushed.", 'warn');
     } else if (name === "Speed") {
       opponent.applyEffect('speed', Date.now() + 10000);
-      showMessage("Opponent used <strong>Speed</strong>! Opponent speed +50% for 10s.", 'warn');
+      showMessage("Opponent used <b>Speed</b>! Opponent speed +50% for 10s.", 'warn');
     }
     battleOppTactics[name] = Math.max(0, battleOppTactics[name] - 1);
     nextTurnAfterAction('opponent');
