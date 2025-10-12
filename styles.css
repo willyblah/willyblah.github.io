@@ -94,7 +94,8 @@ b {
 
 .title {
   font-size: 44px;
-  margin: 6px 0;
+  margin-top: 6px;
+  margin-bottom: 8px;
   color: var(--accent);
   letter-spacing: 1px
 }

@@ -24,7 +24,7 @@
     "Iron Sword": { attack: 200, acc: 1, price: 38, desc: "Attack 200, 100% accuracy." },
     Bombie: { attack: 250, acc: 1, price: 48, desc: "Attack 250, 100% accuracy." },
     Punchie: { attack: 300, acc: 1, price: 57, desc: "Attack 300, 100% accuracy." },
-    Rage: { attack: 350, acc: 1, price: 74, desc: "Attack 350, 100% accuracy. +50 attack if used on cactus." },
+    Rage: { attack: 350, acc: 1, price: 74, desc: "Attack 350, 100% accuracy. Requires Living of the Dark!" },
     Blast: { attack: 400, acc: 0.8, price: 77, desc: "Attack 400, 80% accuracy." },
     MillionSkills: { attack: 500, acc: 1, price: 96, desc: "Attack 500, 100% accuracy." }
   };
@@ -277,7 +277,7 @@
     let attack = s.attack || 0;
     const tile = tileAt(actor.x, actor.y);
     if (name === 'Minitrident' && tile === 3) attack += 30;
-    else if (name === 'Rage' && tile === 5) attack += 50;
+    else if (name === 'Rage' && actor.fogMode) attack *= 2;
     return attack;
   }
 
@@ -611,7 +611,7 @@
       showMessage(`<b>${name}</b> cannot be purchased.`, 'warn');
       return;
     }
-    const price = s.price;
+    let price = s.price;
     if (userData.profile === 'Villager') price = Math.ceil(price / 2);
     if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
     userData.diamonds -= price;
@@ -621,7 +621,7 @@
     showMessage(`Bought <b>${name}</b>.`, 'success');
   }
   async function buyTactic(name) {
-    const price = TACTICS[name].price;
+    let price = TACTICS[name].price;
     if (userData.profile === 'Villager') price = Math.ceil(price / 2);
     if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
     userData.diamonds -= price;
