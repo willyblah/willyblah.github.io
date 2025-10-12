@@ -160,6 +160,7 @@ b {
 .btn.profile {
   width: 100%;
   text-align: left;
+  font-size: 15px;
 }
 
 .btn:disabled {
@@ -378,8 +379,7 @@ b {
   border-color: var(--accent);
 }
 
-#btn-buy-health,
-#btn-shop-back {
+.btn.tall {
   height: 42px;
 }
 

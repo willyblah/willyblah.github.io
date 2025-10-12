@@ -140,6 +140,7 @@
   const shopTacticsEl = $("#shop-tactics");
   const btnBuyHealth = $("#btn-buy-health");
   const healthAmountInput = $("#health-amount");
+  const btnChangeProfile = $("#btn-change-profile");
   const btnShopBack = $("#btn-shop-back");
 
   const signupScreen = $("#signup-screen");
@@ -434,8 +435,8 @@
   const keysDown = {};
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
-    if (k === 'tab') e.preventDefault();
-
+    if (k === 'tab' && loginScreen.classList.contains('hidden') && signupScreen.classList.contains('hidden'))
+      e.preventDefault();
     keysDown[k] = true;
   });
   window.addEventListener('keyup', (e) => { keysDown[e.key.toLowerCase()] = false; });
@@ -626,10 +627,16 @@
     renderShopUI();
     showMessage(`Bought <strong>${name}</strong>.`, 'success');
   }
-  async function buyHealth(price) {
-    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+  async function buyHealth(amount) {
+    let price = amount / 5;
+    if (userData.profile === 'Villager')
+      price = Math.ceil(price / 2);
+    if (userData.diamonds < price) {
+      showMessage("Not enough diamonds.", 'error');
+      return;
+    }
     userData.diamonds -= price;
-    userData.maxHealth += price * 5;
+    userData.maxHealth += amount * 5;
     await save(userData);
     renderShopUI();
     showMessage(`Bought ${price * 5} health. You have ${userData.maxHealth} health now.`, 'success');
@@ -640,10 +647,19 @@
       showMessage("Enter a multiple of 5 (minimum 5).", 'error');
       return;
     }
-    buyHealth(amount / 5);
+    buyHealth(amount);
   });
   healthAmountInput.addEventListener('click', (e) => {
     e.stopPropagation();
+  });
+  btnChangeProfile.addEventListener('click', async () => {
+    if (userData.diamonds < 5) {
+      showMessage("Not enough diamonds.", 'error');
+      return;
+    }
+    userData.diamonds -= 5;
+    await save(userData);
+    showProfileSelect();
   });
 
   // ---- Battle lifecycle ----

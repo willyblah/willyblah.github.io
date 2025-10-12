@@ -28,9 +28,9 @@
 
       <h1 class="title">The Game</h1>
       <div class="hud">
-        <div><b>Health: <span id="start-health">--</span></b></div>
-        <div><b>Diamonds: <span id="start-diamonds">--</span></b></div>
-        <div><b>Profile: <span id="start-profile">--</span></b></div>
+        <div><b><i class="fa-solid fa-heart"></i> Health: <span id="start-health">--</span></b></div>
+        <div><b><i class="fa-solid fa-dollar-sign"></i> Diamonds: <span id="start-diamonds">--</span></b></div>
+        <div><b><i class="fa-solid fa-briefcase"></i> Profile: <span id="start-profile">--</span></b></div>
       </div>
 
       <div class="panel">
@@ -43,8 +43,8 @@
       </div>
 
       <div class="controls">
-        <button id="btn-battle" class="btn primary">Battle</button>
-        <button id="btn-shop" class="btn shop">Shop</button>
+        <button id="btn-battle" class="btn primary"><i class="fa-solid fa-fire"></i> Battle</button>
+        <button id="btn-shop" class="btn shop"><i class="fa-solid fa-shop"></i> Shop</button>
       </div>
 
       <p class="hint">Version: 1.5.2</p>
@@ -138,9 +138,10 @@
       </div>
 
       <div class="controls">
-        <button id="btn-buy-health" class="btn">Buy <input type="number" id="health-amount" min="5" step="5" value="5"
+        <button id="btn-buy-health" class="btn tall">Buy <input type="number" id="health-amount" min="5" step="5" value="5"
             aria-label="Health Amount"> health</button>
-        <button id="btn-shop-back" class="btn">Back</button>
+        <button id="btn-change-profile" class="btn tall">Change Profile (5 diamonds)</button>
+        <button id="btn-shop-back" class="btn tall">Back</button>
       </div>
     </div>
 
