@@ -189,14 +189,16 @@
     const islandW = Math.max(1, MAP_W - 2 * ox);
     const islandH = Math.max(1, MAP_H - 2 * oy);
 
-    for (let r = oy; r < oy + islandH; r++) {
-      for (let c = ox; c < ox + islandW; c++) {
+    for (let r = oy; r < oy + islandH; r++)
+      for (let c = ox; c < ox + islandW; c++)
         grid[r][c] = 1;
-      }
-    }
 
     grid[oy + 1][ox + 1] = 1;
     grid[oy + islandH - 2][ox + islandW - 2] = 1;
+
+    // mist tiles
+    grid[islandH / 2][0] = 7;
+    grid[islandH / 2][MAP_W - 1] = 7;
 
     // walls (obstacles)
     for (let i = 0; i < 60; i++) {
@@ -408,6 +410,7 @@
     isDead() { return this.hp <= 0; }
     applyEffect(name, val) { this.effects[name] = val; }
     hasEffect(name) { return this.effects[name] && this.effects[name] > Date.now(); }
+    toggleFogMode() { this.fogMode = !this.fogMode; }
   }
 
   // State
@@ -669,6 +672,7 @@
 
     const startHp = userData.maxHealth;
     player = new Actor(spawns.first[0], spawns.first[1], startHp, 140, '#10b981');
+    player.fogMode = false;
     opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, 140, '#ef4444');
 
     opponent.isChasing = false;
@@ -1139,6 +1143,15 @@
     } else {
       actor.lastCactusTick = 0;
     }
+    if (tile === 7) {
+      if (!actor.lastMistToggle || now - actor.lastMistToggle >= 3000) {
+        actor.toggleFogMode();
+        showMessage(actor.fogMode ? "Mist obscures your vision!" : "Vision restored!", 'info');
+        actor.lastMistToggle = now;
+      }
+    } else {
+      actor.lastMistToggle = 0;
+    }
   }
 
   function tileAt(x, y) {
@@ -1157,8 +1170,23 @@
   // ---- Drawing ----
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (player && player.fogMode) {
+      ctx.fillStyle = '#444040';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    const viewRadius = player && player.fogMode ? 2 * TILE : Infinity;
+
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
+        if (player && player.fogMode) {
+          const tileCenterX = c * TILE + TILE / 2;
+          const tileCenterY = r * TILE + TILE / 2;
+          const dist = Math.hypot(tileCenterX - player.x, tileCenterY - player.y);
+          if (dist > viewRadius) continue;
+        }
+
         const t = grid[r][c];
         const x = c * TILE, y = r * TILE;
         if (t === 0) {
@@ -1182,13 +1210,23 @@
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 8);
+        } else if (t === 7) {
+          ctx.fillStyle = '#8b5a2b';
+          ctx.fillRect(x, y, TILE, TILE);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `${TILE * 0.4}px Inter`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('MIST', x + TILE / 2, y + TILE / 2);
         }
         ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.strokeRect(x, y, TILE, TILE);
       }
     }
 
-    drawActor(player, 'P');
-    drawActor(opponent, 'O');
+    if (player && (!player.fogMode || Math.hypot(player.x - player.x, player.y - player.y) <= viewRadius))
+      drawActor(player, 'P');
+    if (opponent && (!player.fogMode || Math.hypot(opponent.x - player.x, opponent.y - player.y) <= viewRadius))
+      drawActor(opponent, 'O');
   }
 
   function drawActor(a, letter) {
@@ -1547,7 +1585,7 @@
       showMessage(`You lose. ${message}`, 'error');
     }
     if (userData.profile === 'Trickster') {
-      if (Date.now() - state.battle.startTime < 10000) {
+      if (Date.now() - state.battle.startTime < 11000) {
         showMessage('Sorry, no cheating the prize! You must battle for a while.', 'warn', 3000);
       } else {
         showPrize();
