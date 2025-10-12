@@ -550,7 +550,7 @@
   }
 
   function renderShopUI() {
-    shopDiamondsEl.textContent = userData.diamonds + (userData.profile === 'Villager' ? '  (50% off!)' : '');
+    shopDiamondsEl.textContent = userData.diamonds + (userData.profile === 'Villager' ? ' (50% off!)' : '');
     shopSkillsEl.innerHTML = "";
     shopTacticsEl.innerHTML = "";
     Object.keys(SKILLS).forEach(k => {
@@ -559,7 +559,7 @@
       row.className = 'shop-item';
       row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${s.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? s.price / 2 : s.price) : '—'}</div>
+        <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? Math.ceil(s.price / 2) : s.price) : '—'}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => {
@@ -573,7 +573,7 @@
       row.className = 'shop-item';
       row.innerHTML = `<div><strong>${k}</strong><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? t.price / 2 : t.price}</div>
+        <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? Math.ceil(t.price / 2) : t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => {
@@ -608,7 +608,7 @@
       return;
     }
     const price = s.price;
-    if (userData.profile === 'Villager') price /= 2;
+    if (userData.profile === 'Villager') price = Math.ceil(price / 2);
     if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
     userData.diamonds -= price;
     userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
@@ -618,6 +618,7 @@
   }
   async function buyTactic(name) {
     const price = TACTICS[name].price;
+    if (userData.profile === 'Villager') price = Math.ceil(price / 2);
     if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
     userData.diamonds -= price;
     userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
