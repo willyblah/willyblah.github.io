@@ -172,6 +172,10 @@
 
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
+  const fogCanvas = document.createElement('canvas');
+  fogCanvas.width = canvas.width;
+  fogCanvas.height = canvas.height;
+  const fogCtx = fogCanvas.getContext('2d');
 
   // Game constants
   const TILE = 40;
@@ -1171,22 +1175,8 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (player && player.fogMode) {
-      ctx.fillStyle = '#444040';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    const viewRadius = player && player.fogMode ? 2 * TILE : Infinity;
-
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
-        if (player && player.fogMode) {
-          const tileCenterX = c * TILE + TILE / 2;
-          const tileCenterY = r * TILE + TILE / 2;
-          const dist = Math.hypot(tileCenterX - player.x, tileCenterY - player.y);
-          if (dist > viewRadius) continue;
-        }
-
         const t = grid[r][c];
         const x = c * TILE, y = r * TILE;
         if (t === 0) {
@@ -1223,10 +1213,20 @@
       }
     }
 
-    if (player && (!player.fogMode || Math.hypot(player.x - player.x, player.y - player.y) <= viewRadius))
-      drawActor(player, 'P');
-    if (opponent && (!player.fogMode || Math.hypot(opponent.x - player.x, opponent.y - player.y) <= viewRadius))
+    drawActor(player, 'P');
+    if (!player.fogMode || Math.hypot(opponent.x - player.x, opponent.y - player.y) <= 80)
       drawActor(opponent, 'O');
+
+    if (player && player.fogMode) {
+      fogCtx.fillStyle = '#707070';
+      fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
+      fogCtx.globalCompositeOperation = 'destination-out';
+      fogCtx.beginPath();
+      fogCtx.arc(player.x, player.y, 80, 0, Math.PI * 2);
+      fogCtx.fill();
+      fogCtx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(fogCanvas, 0, 0);
+    }
   }
 
   function drawActor(a, letter) {
