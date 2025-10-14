@@ -13,15 +13,10 @@
     rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-  <div id="loading-screen" class="screen">
-    <div class="loading-animation"></div>
-    <p>Loading...</p>
-  </div>
-
   <div id="app">
     <div id="start-screen" class="screen hidden">
       <div class="auth-controls">
@@ -54,8 +49,6 @@
 
       <p class="hint">Version: 1.6</p>
       <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a>
-      <p id="verify-hint" class="hint verify-hint hidden">Please verify your email to save progress. After you finish
-        verifying, refresh this page.</p>
     </div>
 
     <div id="battle-screen" class="screen hidden">
@@ -166,7 +159,7 @@
     <div id="login-screen" class="screen hidden">
       <h1>Log In</h1>
       <form id="login-form">
-        <input type="text" id="login-identifier" class="input-field" placeholder="Username" required>
+        <input type="email" id="login-identifier" class="input-field" placeholder="Email" required>
         <input type="password" id="login-password" class="input-field" placeholder="Password" required>
         <div class="controls">
           <button type="submit" class="btn primary">Log In</button>

@@ -47,35 +47,6 @@ b {
   display: none
 }
 
-#loading-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1000;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-}
-
-#loading-screen.hidden {
-  display: none !important;
-}
-
-.loading-animation {
-  border: 6px solid var(--glass-light);
-  border-top: 6px solid var(--accent);
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-}
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -84,12 +55,6 @@ b {
   100% {
     transform: rotate(360deg);
   }
-}
-
-#loading-screen p {
-  margin-top: 16px;
-  font-size: 18px;
-  color: var(--muted);
 }
 
 .title {
@@ -466,10 +431,6 @@ b {
   color: var(--muted);
   opacity: 0.8;
   font-size: 14px;
-}
-
-.verify-hint {
-  color: orange;
 }
 
 @keyframes msgIn {

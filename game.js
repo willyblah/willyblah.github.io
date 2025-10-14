@@ -1,12 +1,10 @@
 (async () => {
-  AV.init({
-    appId: 'MuZiTMBr50yVU5wL2urxOXZV-MdYXbMMI',
-    appKey: 'kreOP6P8hmHOcgLlyEEBsg8z',
-    serverURL: 'https://muzitmbr.api.lncldglobal.com'
-  });
+  const supabase = window.supabase.createClient(
+    'https://kpubyiygmclpduyqsmkj.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwdWJ5aXlnbWNscGR1eXFzbWtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0Mzk1MTYsImV4cCI6MjA3NjAxNTUxNn0.ukWPhs7dWZ2FJv9rYZO5YvSpthFIy5IbMVy0mBkl8Tk'
+  );
 
   const $ = (sel) => document.querySelector(sel);
-  const loadingScreen = $("#loading-screen");
 
   // ---- Game data ----
   const SKILLS = {
@@ -54,23 +52,39 @@
 
   let loadError = null;
   async function loadSave() {
-    const currentUser = AV.User.current();
-    if (!currentUser) return getDefaultSave();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user || !user.email_confirmed_at) return getDefaultSave();
     try {
-      await currentUser.fetch();
-      if (!currentUser.get('emailVerified'))
-        return getDefaultSave();
-      const loadedSkills = currentUser.get('ownedSkills') || {};
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      if (profileError || !profile) {
+        const defaults = getDefaultSave();
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: user.id,
+          username: user.user_metadata.username || 'Anonymous',
+          diamonds: defaults.diamonds,
+          max_health: defaults.maxHealth,
+          owned_skills: defaults.ownedSkills,
+          owned_tactics: defaults.ownedTactics,
+          profile: defaults.profile
+        });
+        if (insertError) throw insertError;
+        return defaults;
+      }
+      const loadedSkills = profile.owned_skills || {};
       const ownedSkills = Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].infinite ? Infinity : (loadedSkills[k] ?? 0)]));
       return {
-        diamonds: currentUser.get('diamonds') || 0,
-        maxHealth: currentUser.get('maxHealth') || 10,
+        diamonds: profile.diamonds || 0,
+        maxHealth: profile.max_health || 10,
         ownedSkills,
-        ownedTactics: currentUser.get('ownedTactics') || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
-        profile: currentUser.get('profile') || null
+        ownedTactics: profile.owned_tactics || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
+        profile: profile.profile || null
       };
     } catch (e) {
-      loadError = `Load fail: ${e}`;
+      loadError = `Load fail: ${e.message}`;
       return getDefaultSave();
     }
   }
@@ -86,17 +100,22 @@
   }
 
   async function save(state) {
-    const currentUser = AV.User.current();
-    if (!currentUser || !currentUser.get('emailVerified')) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !user.email_confirmed_at) return;
     try {
-      currentUser.set('diamonds', state.diamonds);
-      currentUser.set('maxHealth', state.maxHealth);
-      currentUser.set('ownedSkills', state.ownedSkills);
-      currentUser.set('ownedTactics', state.ownedTactics);
-      currentUser.set('profile', state.profile);
-      await currentUser.save();
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          diamonds: state.diamonds,
+          max_health: state.maxHealth,
+          owned_skills: state.ownedSkills,
+          owned_tactics: state.ownedTactics,
+          profile: state.profile
+        })
+        .eq('id', user.id);
+      if (error) throw error;
     } catch (e) {
-      showMessage("Failed to save progress.", 'error');
+      showMessage(`Failed to save progress: ${e.message}`, 'error');
     }
   }
   let userData = await loadSave();
@@ -461,7 +480,7 @@
     return msg;
   }
 
-  function renderStartUI() {
+  async function renderStartUI() {
     startHealthEl.textContent = userData.maxHealth;
     startDiamondsEl.textContent = userData.diamonds;
     if (userData.profile) startProfileEl.textContent = userData.profile;
@@ -494,23 +513,18 @@
       startTacticsEl.appendChild(btn);
     });
 
-    const currentUser = AV.User.current();
-    if (currentUser) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
       btnSignup.classList.add('hidden');
       btnLogin.classList.add('hidden');
       btnLogout.classList.remove('hidden');
       userGreeting.classList.remove('hidden');
-      userGreeting.textContent = currentUser.get('username');
-      if (!currentUser.get('emailVerified'))
-        verifyHint.classList.remove('hidden');
-      else
-        verifyHint.classList.add('hidden');
+      userGreeting.textContent = user.user_metadata.username || 'Anonymous';
     } else {
       btnSignup.classList.remove('hidden');
       btnLogin.classList.remove('hidden');
       btnLogout.classList.add('hidden');
       userGreeting.classList.add('hidden');
-      verifyHint.classList.add('hidden');
     }
   }
 
@@ -643,10 +657,10 @@
       return;
     }
     userData.diamonds -= price;
-    userData.maxHealth += amount * 5;
+    userData.maxHealth += amount;
     await save(userData);
     renderShopUI();
-    showMessage(`Bought ${price * 5} health. You have ${userData.maxHealth} health now.`, 'success');
+    showMessage(`Bought ${amount} health. You have ${userData.maxHealth} health now.`, 'success');
   }
   btnBuyHealth.addEventListener('click', () => {
     const amount = parseInt(healthAmountInput.value, 10);
@@ -776,8 +790,8 @@
   btnSignup.addEventListener('click', () => showSignup());
   btnLogin.addEventListener('click', () => showLogin());
   btnLogout.addEventListener('click', async () => {
-    await AV.User.logOut();
-    userData = await loadSave();
+    await supabase.auth.signOut();
+    userData = getDefaultSave();
     showStart();
   });
   btnSignupBack.addEventListener('click', () => showStart());
@@ -795,12 +809,13 @@
     }
     submitBtn.disabled = true;
     try {
-      const user = new AV.User();
-      user.setUsername(username);
-      user.setPassword(password);
-      user.setEmail(email);
-      await user.signUp();
-      showVerify();
+      const { data: { user }, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { username } }
+      });
+      if (error) throw error;
+      if (user) showVerify();
     } catch (err) {
       showMessage(`Sign up failed: ${err.message}`, 'error', 3000);
     } finally {
@@ -809,19 +824,19 @@
   });
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const identifier = loginIdentifier.value.trim();
+    const email = loginIdentifier.value.trim();
     const password = loginPassword.value.trim();
     const submitBtn = loginForm.querySelector('button[type="submit"]');
-    if (!identifier || !password) {
+    if (!email || !password) {
       showMessage("All fields required.", 'error');
       return;
     }
     submitBtn.disabled = true;
     try {
-      const loggedInUser = await AV.User.logIn(identifier, password);
-      await loggedInUser.fetch();
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       userData = await loadSave();
-      if (!userData.profile && loggedInUser.get('emailVerified')) showProfileSelect();
+      if (!userData.profile) showProfileSelect();
       else showStart();
     } catch (err) {
       showMessage(`Log in failed: ${err.message}`, 'error', 3000);
@@ -870,12 +885,6 @@
   }
   async function showStart() {
     userData = await loadSave();
-    loadingScreen.classList.add('hidden');
-    const currentUser = AV.User.current();
-    if (currentUser && currentUser.get('emailVerified') && !userData.profile) {
-      showProfileSelect();
-      return;
-    }
     showScreen('startScreen');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
