@@ -845,7 +845,7 @@
     btnStopPrize.disabled = true;
     prizeResult.parentNode.classList.remove('hidden');
     if (prizePosition > 50) {
-      const diamondGain = Math.floor(Math.random() * 8);
+      const diamondGain = Math.floor(Math.random() * 6);
       if (Math.random() < 0.5) {
         const healthGain = diamondGain * 5;
         userData.maxHealth += healthGain;
@@ -906,14 +906,8 @@
       prizeDot.style.left = prizePosition + '%';
     }, 30);
   }
-  async function showSignup() {
-    showScreen('signupScreen');
-    if (await inChina()) showMessage("Sign up might not be available in your country or region.", "warn", 3000);
-  }
-  async function showLogin() {
-    showScreen('loginScreen');
-    if (await inChina()) showMessage("Log in might not be available in your country or region.", "warn", 3000);
-  }
+  function showSignup() { showScreen('signupScreen'); }
+  function showLogin() { showScreen('loginScreen'); }
   function showVerify() { showScreen('verifyScreen'); }
   function showProfileSelect() { showScreen('profileScreen'); }
 
@@ -1571,7 +1565,9 @@
 
   async function finalizeEndBattle(playerWon, message) {
     if (!state.battle || state.battle.battleOver) return;
+    const battle = state.battle;
     state.battle.battleOver = true;
+    stopBattle();
 
     let awarded = Math.floor(opponentStrength * 15);
     if (currentLevel === 'normal') awarded += 2;
@@ -1585,7 +1581,7 @@
       showMessage(`You lose. ${message}`, 'error');
     }
     if (userData.profile === 'Trickster') {
-      if (Date.now() - state.battle.startTime < 11000) {
+      if (Date.now() - battle.startTime < 11000) {
         showMessage('Sorry, no cheating the prize! You must battle for a while.', 'warn', 3000);
       } else {
         showPrize();
@@ -1593,17 +1589,6 @@
       }
     }
     showStart();
-  }
-
-  async function inChina() {
-    try {
-      const response = await fetch('https://ipapi.co/country/');
-      const country = await response.text();
-      return country === 'CN';
-    } catch (error) {
-      showMessage(`Error fetching country: ${error}`);
-      return false;
-    }
   }
 
   showStart();
