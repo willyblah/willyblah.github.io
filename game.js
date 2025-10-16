@@ -31,9 +31,10 @@
   };
 
   const TACTICS = {
-    Dizzydizzy: { price: 12, desc: "Gives you two extra turns." },
+    Dizzydizzy: { price: 15, desc: "Gives you two extra turns." },
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
-    Speed: { price: 10, desc: "Speed +50% for 10s." }
+    Speed: { price: 8, desc: "Speed +50% for 10s." },
+    "Emergency Platform": { price: 15, desc: "Saves you from falling into the void." }
   };
 
   const LEVELS = {
@@ -59,11 +60,13 @@
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user || !user.email_confirmed_at) return getDefaultSave();
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
+
       if (profileError || !profile) {
         const defaults = getDefaultSave();
         const { error: insertError } = await supabase.from('profiles').insert({
@@ -78,15 +81,20 @@
         if (insertError) throw insertError;
         return defaults;
       }
+
       const loadedSkills = profile.owned_skills || {};
       const ownedSkills = Object.fromEntries(Object.keys(SKILLS).map(k => [k, SKILLS[k].infinite ? Infinity : (loadedSkills[k] ?? 0)]));
+      const loadedTactics = profile.owned_tactics || {};
+      const ownedTactics = Object.fromEntries(Object.keys(TACTICS).map(k => [k, loadedTactics[k] ?? 0]));
+
       return {
         diamonds: profile.diamonds || 0,
         maxHealth: profile.max_health || 10,
         ownedSkills,
-        ownedTactics: profile.owned_tactics || Object.fromEntries(Object.keys(TACTICS).map(k => [k, 0])),
+        ownedTactics,
         profile: profile.profile || null
       };
+
     } catch (e) {
       loadError = `Load fail: ${e.message}`;
       return getDefaultSave();
@@ -161,6 +169,7 @@
   const opponentPreview = $("#opponent-preview");
   const previewHealthEl = $("#preview-health");
   const previewSkillsEl = $("#preview-skills");
+  const previewTacticsEl = $("#preview-tactics");
   const levelSelect = $("#level-select");
 
   const shopDiamondsEl = $("#shop-diamonds");
@@ -451,7 +460,7 @@
   let player = null, opponent = null;
   let battlePlayerSkills = {}, battlePlayerTactics = {};
   let battleOppSkills = {}, battleOppTactics = {};
-  let opponentHealth = 0, opponentSkills = [];
+  let opponentHealth = 0, opponentSkills = [], opponentTactics = {};
   let state = { battle: null };
 
   let scaleInterval = null;
@@ -719,7 +728,8 @@
     opponent.isChasing = false;
 
     battlePlayerSkills = {}; battlePlayerTactics = {};
-    battleOppSkills = {}; battleOppTactics = {};
+    battleOppSkills = {};
+    battleOppTactics = opponentTactics || {};
 
     Object.keys(SKILLS).forEach(k => {
       const owned = userData.ownedSkills[k];
@@ -736,10 +746,7 @@
       if (k === 'Spear' || k === 'Knife') battleOppSkills[k] = Infinity;
     });
 
-    Object.keys(TACTICS).forEach(k => {
-      battlePlayerTactics[k] = userData.ownedTactics[k] || 0;
-      battleOppTactics[k] = userData.ownedTactics[k] || 0;
-    });
+    Object.keys(TACTICS).forEach(k => { battlePlayerTactics[k] = userData.ownedTactics[k] || 0; });
 
     renderBattleUI();
 
@@ -776,6 +783,49 @@
     const level = LEVELS[currentLevel];
     const count = Math.floor(level.minSkills.length + opponentStrength * (level.maxSkills.length - level.minSkills.length));
     return level.maxSkills.slice(0, Math.max(level.minSkills.length, count));
+  }
+
+  function generateOppTactics() {
+    const allTactics = Object.keys(TACTICS);
+    const tactics = {};
+    allTactics.forEach(tactic => { tactics[tactic] = 0; });
+
+    if (currentLevel === 'normal') {
+      if (opponentStrength >= 0.25 && opponentStrength < 0.5) {
+        const randomTactic = allTactics[Math.floor(Math.random() * allTactics.length)];
+        tactics[randomTactic] = 1;
+      } else if (opponentStrength >= 0.5 && opponentStrength < 0.75) {
+        const randomTactic = allTactics[Math.floor(Math.random() * allTactics.length)];
+        tactics[randomTactic] = 2;
+      } else if (opponentStrength >= 0.75 && opponentStrength <= 1.0) {
+        const shuffled = [...allTactics].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 2);
+        tactics[selected[0]] = 1;
+        tactics[selected[1]] = 2;
+      }
+    } else {
+      if (opponentStrength >= 0 && opponentStrength < 0.25) {
+        const shuffled = [...allTactics].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 2);
+        selected.forEach(tactic => { tactics[tactic] = 2; });
+      } else if (opponentStrength >= 0.25 && opponentStrength < 0.5) {
+        const shuffled = [...allTactics].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3);
+        tactics[selected[0]] = 2;
+        tactics[selected[1]] = 2;
+        tactics[selected[2]] = 1;
+      } else if (opponentStrength >= 0.5 && opponentStrength < 0.75) {
+        const shuffled = [...allTactics].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3);
+        tactics[selected[0]] = 3;
+        tactics[selected[1]] = 2;
+        tactics[selected[2]] = 2;
+      } else if (opponentStrength >= 0.75 && opponentStrength <= 1.0) {
+        allTactics.forEach(tactic => { tactics[tactic] = 2; });
+      }
+    }
+
+    return tactics;
   }
 
   btnBattle.addEventListener('click', () => {
@@ -981,9 +1031,16 @@
     btnStartBattle.disabled = false;
 
     opponentHealth = calculateOppHealth();
-    previewHealthEl.textContent = opponentHealth;
     opponentSkills = calculateOppSkills();
+    opponentTactics = generateOppTactics();
+
+    previewHealthEl.textContent = opponentHealth;
     previewSkillsEl.textContent = opponentSkills.join(', ');
+    const tacticsText = Object.entries(opponentTactics)
+      .filter(([tactic, count]) => count > 0)
+      .map(([tactic, count]) => `${tactic}`)
+      .join(', ');
+    previewTacticsEl.textContent = tacticsText || 'None';
   }
 
   // ---- Battle loop & drawing ----
@@ -1063,26 +1120,40 @@
     handleHazards(opponent, dt);
 
     if (isVoidAt(player.x, player.y)) {
-      player.hp = 0;
-      animateHPChange(playerHpFill, 0);
-      setTimeout(() => finalizeEndBattle(false, "You fell into the void."), 700);
-      return;
+      if (battlePlayerTactics["Emergency Platform"] && battlePlayerTactics["Emergency Platform"] > 0) {
+        if (useEmergencyPlatform(player.x, player.y)) {
+          battlePlayerTactics["Emergency Platform"]--;
+          renderBattleUI();
+        }
+      } else {
+        player.hp = 0;
+        animateHPChange(playerHpFill, 0);
+        setTimeout(() => finalizeEndBattle(false, "You fell into the void."), 600);
+        return;
+      }
     }
     if (isVoidAt(opponent.x, opponent.y)) {
-      opponent.hp = 0;
-      animateHPChange(opponentHpFill, 0);
-      setTimeout(() => finalizeEndBattle(true, "Opponent fell into the void."), 700);
-      return;
+      if (battleOppTactics["Emergency Platform"] && battleOppTactics["Emergency Platform"] > 0) {
+        if (useEmergencyPlatform(opponent.x, opponent.y)) {
+          battleOppTactics["Emergency Platform"]--;
+          renderBattleUI();
+        }
+      } else {
+        opponent.hp = 0;
+        animateHPChange(opponentHpFill, 0);
+        setTimeout(() => finalizeEndBattle(true, "Opponent fell into the void."), 600);
+        return;
+      }
     }
 
     if (player.isDead()) {
       animateHPChange(playerHpFill, 0);
-      setTimeout(() => finalizeEndBattle(false, "You died."), 700);
+      setTimeout(() => finalizeEndBattle(false, "You died."), 600);
       return;
     }
     if (opponent.isDead()) {
       animateHPChange(opponentHpFill, 0);
-      setTimeout(() => finalizeEndBattle(true, "Opponent died."), 700);
+      setTimeout(() => finalizeEndBattle(true, "Opponent died."), 600);
       return;
     }
 
@@ -1189,6 +1260,17 @@
     } else {
       actor.lastMistToggle = 0;
     }
+  }
+
+  function useEmergencyPlatform(x, y) {
+    const c = Math.floor(x / TILE);
+    const r = Math.floor(y / TILE);
+    if (inBounds(r, c) && grid[r][c] === 0) {
+      grid[r][c] = 1;
+      showMessage("Emergency Platform activated!", 'success');
+      return true;
+    }
+    return false;
   }
 
   function tileAt(x, y) {
