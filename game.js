@@ -940,7 +940,7 @@
     btnStopPrize.disabled = true;
     prizeResult.parentNode.classList.remove('hidden');
     if (prizePosition > 50) {
-      const diamondGain = Math.floor(Math.random() * 6);
+      const diamondGain = 1 + Math.floor(Math.random() * 5);
       if (Math.random() < 0.5) {
         const healthGain = diamondGain * 5;
         userData.maxHealth += healthGain;
@@ -1017,7 +1017,7 @@
       }
 
       scaleDot.style.left = scalePosition + '%';
-    }, 40);
+    }, 30);
   }
 
   function stopScale() {
