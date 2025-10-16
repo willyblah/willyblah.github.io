@@ -5,6 +5,9 @@
   );
 
   const $ = (sel) => document.querySelector(sel);
+  const loading = $("#loading-indicator");
+  function showLoading() { loading.classList.remove('hidden'); }
+  function hideLoading() { loading.classList.add('hidden'); }
 
   // ---- Game data ----
   const SKILLS = {
@@ -52,9 +55,10 @@
 
   let loadError = null;
   async function loadSave() {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user || !user.email_confirmed_at) return getDefaultSave();
+    showLoading();
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user || !user.email_confirmed_at) return getDefaultSave();
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -86,6 +90,8 @@
     } catch (e) {
       loadError = `Load fail: ${e.message}`;
       return getDefaultSave();
+    } finally {
+      hideLoading();
     }
   }
 
@@ -100,9 +106,10 @@
   }
 
   async function save(state) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || !user.email_confirmed_at) return;
+    showLoading();
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !user.email_confirmed_at) return;
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -116,6 +123,8 @@
       if (error) throw error;
     } catch (e) {
       showMessage(`Failed to save progress: ${e.message}`, 'error');
+    } finally {
+      hideLoading();
     }
   }
   let userData = await loadSave();
@@ -178,7 +187,6 @@
   const signupPassword = $("#signup-password");
   const loginIdentifier = $("#login-identifier");
   const loginPassword = $("#login-password");
-  const verifyHint = $("#verify-hint");
   const userGreeting = $("#user-greeting");
 
   const profileScreen = $("#profile-screen");
@@ -624,43 +632,58 @@
 
   // ---- Shop actions ----
   async function buySkill(name) {
-    const s = SKILLS[name];
-    if (!s.price) {
-      showMessage(`<b>${name}</b> cannot be purchased.`, 'warn');
-      return;
+    showLoading();
+    try {
+      const s = SKILLS[name];
+      if (!s.price) {
+        showMessage(`<b>${name}</b> cannot be purchased.`, 'warn');
+        return;
+      }
+      let price = s.price;
+      if (userData.profile === 'Villager') price = Math.ceil(price / 2);
+      if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+      userData.diamonds -= price;
+      userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
+      await save(userData);
+      renderShopUI();
+      showMessage(`Bought <b>${name}</b>.`, 'success');
+    } finally {
+      hideLoading();
     }
-    let price = s.price;
-    if (userData.profile === 'Villager') price = Math.ceil(price / 2);
-    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
-    userData.diamonds -= price;
-    userData.ownedSkills[name] = (userData.ownedSkills[name] || 0) + 1;
-    await save(userData);
-    renderShopUI();
-    showMessage(`Bought <b>${name}</b>.`, 'success');
   }
   async function buyTactic(name) {
-    let price = TACTICS[name].price;
-    if (userData.profile === 'Villager') price = Math.ceil(price / 2);
-    if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
-    userData.diamonds -= price;
-    userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
-    await save(userData);
-    renderShopUI();
-    showMessage(`Bought <b>${name}</b>.`, 'success');
+    showLoading();
+    try {
+      let price = TACTICS[name].price;
+      if (userData.profile === 'Villager') price = Math.ceil(price / 2);
+      if (userData.diamonds < price) { showMessage("Not enough diamonds.", 'error'); return; }
+      userData.diamonds -= price;
+      userData.ownedTactics[name] = (userData.ownedTactics[name] || 0) + 1;
+      await save(userData);
+      renderShopUI();
+      showMessage(`Bought <b>${name}</b>.`, 'success');
+    } finally {
+      hideLoading();
+    }
   }
   async function buyHealth(amount) {
-    let price = amount / 5;
-    if (userData.profile === 'Villager')
-      price = Math.ceil(price / 2);
-    if (userData.diamonds < price) {
-      showMessage("Not enough diamonds.", 'error');
-      return;
+    showLoading();
+    try {
+      let price = amount / 5;
+      if (userData.profile === 'Villager')
+        price = Math.ceil(price / 2);
+      if (userData.diamonds < price) {
+        showMessage("Not enough diamonds.", 'error');
+        return;
+      }
+      userData.diamonds -= price;
+      userData.maxHealth += amount;
+      await save(userData);
+      renderShopUI();
+      showMessage(`Bought ${amount} health. You have ${userData.maxHealth} health now.`, 'success');
+    } finally {
+      hideLoading();
     }
-    userData.diamonds -= price;
-    userData.maxHealth += amount;
-    await save(userData);
-    renderShopUI();
-    showMessage(`Bought ${amount} health. You have ${userData.maxHealth} health now.`, 'success');
   }
   btnBuyHealth.addEventListener('click', () => {
     const amount = parseInt(healthAmountInput.value, 10);
@@ -808,6 +831,7 @@
       return;
     }
     submitBtn.disabled = true;
+    showLoading();
     try {
       const { data: { user }, error } = await supabase.auth.signUp({
         email,
@@ -820,6 +844,7 @@
       showMessage(`Sign up failed: ${err.message}`, 'error', 3000);
     } finally {
       submitBtn.disabled = false;
+      hideLoading();
     }
   });
   loginForm.addEventListener('submit', async (e) => {
@@ -832,6 +857,7 @@
       return;
     }
     submitBtn.disabled = true;
+    showLoading();
     try {
       const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -842,12 +868,16 @@
       showMessage(`Log in failed: ${err.message}`, 'error', 3000);
     } finally {
       submitBtn.disabled = false;
+      hideLoading();
     }
   });
   async function selectProfile(profileName) {
-    userData.profile = profileName;
-    await save(userData);
-    showStart();
+    showLoading();
+    try {
+      userData.profile = profileName;
+      await save(userData);
+      showStart();
+    } finally { hideLoading(); }
   }
   $("#btn-warrior").addEventListener('click', () => selectProfile('Warrior'));
   $("#btn-miner").addEventListener('click', () => selectProfile('Miner'));
@@ -1372,7 +1402,7 @@
 
   function animateHPChange(el, pct) {
     if (pct === 0)
-      el.style.transition = 'width 700ms ease';
+      el.style.transition = 'width 600ms ease';
     else
       el.style.transition = 'width 400ms ease';
     el.style.width = `${pct}%`;
@@ -1578,9 +1608,7 @@
     state.battle.battleOver = true;
     stopBattle();
 
-    let awarded = Math.floor(opponentStrength * 15);
-    if (currentLevel === 'normal') awarded += 2;
-    else awarded += 12;
+    let awarded = Math.floor(opponentStrength * 15) + (currentLevel === 'normal' ? 2 : 12);
     if (playerWon) {
       if (userData.profile === 'Miner') awarded *= 2;
       userData.diamonds = (userData.diamonds || 0) + awarded;
