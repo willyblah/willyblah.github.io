@@ -138,9 +138,18 @@
   let userData = await loadSave();
 
   // ---- UI references ----
-  const startScreen = $("#start-screen");
-  const battleScreen = $("#battle-screen");
-  const shopScreen = $("#shop-screen");
+  const screens = {
+    start: $("#start-screen"),
+    battle: $("#battle-screen"),
+    shop: $("#shop-screen"),
+    scale: $("#scale-screen"),
+    signup: $("#signup-screen"),
+    login: $("#login-screen"),
+    verify: $("#verify-screen"),
+    profile: $("#profile-screen"),
+    prize: $("#prize-screen")
+  };
+
   const tooltip = $("#tooltip");
   const messagesContainer = $("#messages");
 
@@ -161,7 +170,6 @@
   const btnShop = $("#btn-shop");
   const btnSurrender = $("#btn-surrender");
 
-  const scaleScreen = $("#scale-screen");
   const scaleDot = $("#scale-dot");
   const btnStopScale = $("#btn-stop-scale");
   const btnStartBattle = $("#btn-start-battle");
@@ -180,9 +188,6 @@
   const btnChangeProfile = $("#btn-change-profile");
   const btnShopBack = $("#btn-shop-back");
 
-  const signupScreen = $("#signup-screen");
-  const loginScreen = $("#login-screen");
-  const verifyScreen = $("#verify-screen");
   const signupForm = $("#signup-form");
   const loginForm = $("#login-form");
   const btnSignup = $("#btn-signup");
@@ -198,9 +203,6 @@
   const loginPassword = $("#login-password");
   const userGreeting = $("#user-greeting");
 
-  const profileScreen = $("#profile-screen");
-
-  const prizeScreen = $("#prize-screen");
   const prizeDot = $("#prize-dot");
   const btnStopPrize = $("#btn-stop-prize");
   const prizeResult = $("#prize-result p");
@@ -478,7 +480,7 @@
   const keysDown = {};
   window.addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
-    if (k === 'tab' && loginScreen.classList.contains('hidden') && signupScreen.classList.contains('hidden'))
+    if (k === 'tab' && screens.login.classList.contains('hidden') && screens.signup.classList.contains('hidden'))
       e.preventDefault();
     keysDown[k] = true;
   });
@@ -959,20 +961,21 @@
   });
 
   // UI screens
-  const screens = { startScreen, battleScreen, shopScreen, scaleScreen, signupScreen, loginScreen, verifyScreen, profileScreen, prizeScreen };
   function showScreen(name) {
-    Object.values(screens).forEach(screen => screen.classList.toggle('hidden', screen !== screens[name]));
+    Object.keys(screens).forEach(screen => {
+      screens[screen].classList.toggle('hidden', screen !== name);
+    });
   }
   async function showStart() {
     userData = await loadSave();
-    showScreen('startScreen');
+    showScreen('start');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
   }
-  function showBattle() { showScreen('battleScreen'); }
-  function showShop() { showScreen('shopScreen'); }
+  function showBattle() { showScreen('battle'); }
+  function showShop() { showScreen('Screen'); }
   function showScale() {
-    showScreen('scaleScreen');
+    showScreen('scale');
     opponentPreview.classList.add('hidden');
     btnStartBattle.disabled = true;
     btnStopScale.disabled = false;
@@ -980,7 +983,7 @@
     startScale();
   }
   function showPrize() {
-    showScreen('prizeScreen');
+    showScreen('prize');
     prizeResult.parentNode.classList.add('hidden');
     btnStopPrize.disabled = false;
     btnStopPrize.textContent = 'Stop';
@@ -995,10 +998,10 @@
       prizeDot.style.left = prizePosition + '%';
     }, 30);
   }
-  function showSignup() { showScreen('signupScreen'); }
-  function showLogin() { showScreen('loginScreen'); }
-  function showVerify() { showScreen('verifyScreen'); }
-  function showProfileSelect() { showScreen('profileScreen'); }
+  function showSignup() { showScreen('signup'); }
+  function showLogin() { showScreen('login'); }
+  function showVerify() { showScreen('verify'); }
+  function showProfileSelect() { showScreen('profile'); }
 
   function startScale() {
     scaleStopped = false;
