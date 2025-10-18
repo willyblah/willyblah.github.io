@@ -419,8 +419,8 @@
     const next = path[nextIndex];
     const dx = next.x - actor.x, dy = next.y - actor.y;
     const mag = Math.hypot(dx, dy) || 1;
-    actor.vx = (dx / mag) * actor.speed;
-    actor.vy = (dy / mag) * actor.speed;
+    actor.vx = (dx / mag) * actor.getSpeed();
+    actor.vy = (dy / mag) * actor.getSpeed();
     return true;
   }
 
@@ -444,15 +444,13 @@
   class Actor {
     constructor(x, y, hp, speed, color) {
       this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.hp = hp; this.maxHp = hp; this.speed = speed; this.color = color;
-      this.effects = {}; this.extraTurns = 0; this.lastLavaTick = 0; this.lastCactusTick = 0;
+      this.extraTurns = 0; this.lastLavaTick = 0; this.lastCactusTick = 0; this.speedEffectEnd = 0;
     }
-    applyDamage(d) {
-      this.hp -= d; if (this.hp < 0) this.hp = 0;
-    }
+    applyDamage(d) { this.hp -= d; if (this.hp < 0) this.hp = 0; }
     isDead() { return this.hp <= 0; }
-    applyEffect(name, val) { this.effects[name] = val; }
-    hasEffect(name) { return this.effects[name] && this.effects[name] > Date.now(); }
     toggleFogMode() { this.fogMode = !this.fogMode; }
+    applySpeedBoost(durationMs) { this.speedEffectEnd = Date.now() + durationMs; }
+    getSpeed() { return this.speedEffectEnd > Date.now() ? this.speed * 1.5 : this.speed; }
   }
 
   // State
@@ -856,7 +854,7 @@
     prepareBattle();
   });
   btnScaleBack.addEventListener('click', () => {
-    stopScale();
+    if (!scaleStopped) stopScale();
     showStart();
   });
   levelSelect.addEventListener('change', () => {
@@ -973,7 +971,7 @@
     if (loadError) showMessage(loadError, 'error', 3000);
   }
   function showBattle() { showScreen('battle'); }
-  function showShop() { showScreen('Screen'); }
+  function showShop() { showScreen('shop'); }
   function showScale() {
     showScreen('scale');
     opponentPreview.classList.add('hidden');
@@ -1073,8 +1071,7 @@
     const now = Date.now();
 
     // movement
-    let spd = player.speed;
-    if (player.hasEffect && player.hasEffect('speed')) { spd *= 1.5; }
+    let spd = player.getSpeed();
     if (keysDown['w'] || keysDown['a'] || keysDown['s'] || keysDown['d']) {
       let dx = 0, dy = 0;
       if (keysDown['w']) dy -= 1;
@@ -1198,7 +1195,6 @@
     const newC = Math.floor(actor.x / TILE), newR = Math.floor(actor.y / TILE);
     if (newR !== oldR && newC !== oldC) {
       if ((!inBounds(oldR, newC) || grid[oldR][newC] === 2) && (!inBounds(newR, oldC) || grid[newR][oldC] === 2)) {
-        // revert and stop movement
         actor.x = originalX;
         actor.y = originalY;
         actor.vx = 0;
@@ -1432,7 +1428,7 @@
       applyPush(opponent);
       showMessage(`You used <b>${name}</b>! Opponent was pushed.`, 'info');
     } else if (name === "Speed") {
-      player.applyEffect('speed', Date.now() + 10000);
+      player.applySpeedBoost(10000);
       showMessage(`You used <b>${name}</b>! Speed up 10s.`, 'info');
     }
 
@@ -1624,7 +1620,7 @@
       applyPush(player);
       showMessage("Opponent used <b>Pushie</b>! You were pushed.", 'warn');
     } else if (name === "Speed") {
-      opponent.applyEffect('speed', Date.now() + 10000);
+      opponent.applySpeedBoost(10000);
       showMessage("Opponent used <b>Speed</b>! Opponent speed +50% for 10s.", 'warn');
     }
     battleOppTactics[name] = Math.max(0, battleOppTactics[name] - 1);
