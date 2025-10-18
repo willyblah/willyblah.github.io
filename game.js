@@ -219,11 +219,6 @@
   const TILE = 40;
   const MAP_W = Math.floor(canvas.width / TILE);
   const MAP_H = Math.floor(canvas.height / TILE);
-  const LAVA_DAMAGE = 10;
-  const CACTUS_DPS = 5;
-  const LAVA_TICK_INTERVAL = 500;
-  const CACTUS_TICK_INTERVAL = 250;
-
   function generateMap() {
     const grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(0));
     const ox = 1;
@@ -1232,8 +1227,8 @@
     const tile = tileAt(actor.x, actor.y);
     if (tile === 4) {
       if (!actor.lastLavaTick) actor.lastLavaTick = now;
-      if (now - actor.lastLavaTick >= LAVA_TICK_INTERVAL) {
-        actor.applyDamage(LAVA_DAMAGE);
+      if (now - actor.lastLavaTick >= 250) {
+        actor.applyDamage(20);
         actor.lastLavaTick = now;
         if (actor === player) showMessage("Sizzling in lava!", 'warn');
       }
@@ -1242,8 +1237,8 @@
     }
     if (tile === 5) {
       if (!actor.lastCactusTick) actor.lastCactusTick = now;
-      if (now - actor.lastCactusTick >= CACTUS_TICK_INTERVAL) {
-        actor.applyDamage(Math.round(CACTUS_DPS * (CACTUS_TICK_INTERVAL / 1000)));
+      if (now - actor.lastCactusTick >= 250) {
+        actor.applyDamage(5);
         actor.lastCactusTick = now;
         if (actor === player) showMessage("Pricked by cactus!", 'warn');
       }
