@@ -208,6 +208,11 @@
   const prizeResult = $("#prize-result p");
   const btnPrizeBack = $("#btn-prize-back");
 
+  const whatsNewLink = $("#whats-new-link");
+  const whatsNewPopup = $("#whats-new-popup");
+  const closePopup = $("#close-popup");
+  const whatsNewContent = $("#whats-new-content");
+
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
   const fogCanvas = document.createElement('canvas');
@@ -952,6 +957,22 @@
   btnPrizeBack.addEventListener('click', () => {
     showStart();
   });
+  whatsNewLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('changelog.html');
+      whatsNewContent.innerHTML = await response.text();
+    } catch (err) {
+      whatsNewContent.innerHTML = '<p>Failed to load release notes.</p>';
+    }
+    whatsNewPopup.classList.remove('hidden');
+  });
+  closePopup.addEventListener('click', () => {
+    whatsNewPopup.classList.add('hidden');
+  });
+  whatsNewPopup.addEventListener('click', (e) => {
+    if (e.target === whatsNewPopup) whatsNewPopup.classList.add('hidden');
+  });
 
   // UI screens
   function showScreen(name) {
@@ -1169,8 +1190,8 @@
     // update hp bars
     playerHpFill.style.width = `${(player.hp / player.maxHp) * 100}%`;
     opponentHpFill.style.width = `${(opponent.hp / opponent.maxHp) * 100}%`;
-    if (playerHealthText) playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
-    if (opponentHealthText) opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
+    playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+    opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
   }
 
   function applyMovement(actor, dt) {

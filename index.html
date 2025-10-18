@@ -23,7 +23,8 @@
         <button id="btn-signup" class="btn primary">Sign Up</button>
         <button id="btn-login" class="btn primary">Log In</button>
         <span id="user-greeting" class="hidden"></span>
-        <button id="btn-logout" class="btn danger hidden" aria-label="Log Out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        <button id="btn-logout" class="btn danger hidden" aria-label="Log Out"><i
+            class="fa-solid fa-arrow-right-from-bracket"></i></button>
       </div>
 
       <h1 class="title">The Game</h1>
@@ -47,8 +48,9 @@
         <button id="btn-shop" class="btn shop"><i class="fa-solid fa-shop"></i> Shop</button>
       </div>
 
-      <p class="hint">Version: 1.6.2</p>
-      <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a>
+      <p class="hint">Version: 1.6.3</p>
+      <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a> <span class="hint">|</span>
+      <a class="hint" href="#" id="whats-new-link">What's New</a>
     </div>
 
     <div id="battle-screen" class="screen hidden">
@@ -176,35 +178,42 @@
         <button id="btn-verify-back" class="btn primary">Back to Start</button>
       </div>
     </div>
-  </div>
 
-  <div id="profile-screen" class="screen hidden">
-    <h2>Choose Your Profile</h2>
-    <div class="panel profile-panel">
-      <button id="btn-warrior" class="btn profile"><i class="fa-solid fa-gun"></i> Warrior: Opponent's accuracy is
-        always 50%.</button>
-      <button id="btn-miner" class="btn profile"><i class="fa-solid fa-person-digging"></i> Miner: Get twice as many
-        diamonds when you win.</button>
-      <button id="btn-trickster" class="btn profile"><i class="fa-solid fa-hat-wizard"></i> Trickster: Get a (small)
-        prize, even if you lost.</button>
-      <button id="btn-villager" class="btn profile"><i class="fa-solid fa-child-reaching"></i> Villager: Get 50% off in
-        the shop.</button>
-    </div>
-  </div>
-
-  <div id="prize-screen" class="screen hidden">
-    <h2>Trickster Prize</h2>
-    <div class="scale-container">
-      <div class="scale-labels"><span>No Prize</span><span>Prize</span></div>
-      <div class="scale-track">
-        <div id="prize-dot" class="scale-dot"></div>
+    <div id="profile-screen" class="screen hidden">
+      <h2>Choose Your Profile</h2>
+      <div class="panel profile-panel">
+        <button id="btn-warrior" class="btn profile"><i class="fa-solid fa-gun"></i> Warrior: Opponent's accuracy is
+          always 50%.</button>
+        <button id="btn-miner" class="btn profile"><i class="fa-solid fa-person-digging"></i> Miner: Get twice as many
+          diamonds when you win.</button>
+        <button id="btn-trickster" class="btn profile"><i class="fa-solid fa-hat-wizard"></i> Trickster: Get a (small)
+          prize, even if you lost.</button>
+        <button id="btn-villager" class="btn profile"><i class="fa-solid fa-child-reaching"></i> Villager: Get 50% off
+          in the shop.</button>
       </div>
-      <button id="btn-stop-prize" class="btn primary">Stop</button>
     </div>
-    <div id="prize-result" class="hidden">
-      <p></p>
+
+    <div id="prize-screen" class="screen hidden">
+      <h2>Trickster Prize</h2>
+      <div class="scale-container">
+        <div class="scale-labels"><span>No Prize</span><span>Prize</span></div>
+        <div class="scale-track">
+          <div id="prize-dot" class="scale-dot"></div>
+        </div>
+        <button id="btn-stop-prize" class="btn primary">Stop</button>
+      </div>
+      <div id="prize-result" class="hidden">
+        <p></p>
+      </div>
+      <div class="controls"><button id="btn-prize-back" class="btn">Back</button></div>
     </div>
-    <div class="controls"><button id="btn-prize-back" class="btn">Back</button></div>
+  </div>
+
+  <div id="whats-new-popup" class="popup hidden">
+    <div class="popup-content">
+      <button id="close-popup" class="close-btn">&times;</button>
+      <div id="whats-new-content"></div>
+    </div>
   </div>
 
   <div id="loading-indicator" class="loading-indicator hidden">
