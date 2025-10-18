@@ -34,7 +34,7 @@
     Dizzydizzy: { price: 15, desc: "Gives you two extra turns." },
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
     Speed: { price: 8, desc: "Speed +50% for 10s." },
-    "Emergency Platform": { price: 15, desc: "Saves you from falling into the void." }
+    "Emergency Platform": { price: 15, desc: "Automatically saves you from falling into the void." }
   };
 
   const LEVELS = {
@@ -514,7 +514,7 @@
       btn.className = 'skill-btn';
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
-      attachTooltip(btn, `${k}<br>${s.desc}<br>Price: ${s.price || '—'}`);
+      attachTooltip(btn, s.desc);
       startSkillsEl.appendChild(btn);
     });
     // tactics
@@ -526,7 +526,7 @@
       btn.className = 'tactic-btn';
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
-      attachTooltip(btn, `${k}<br>${t.desc}<br>Price: ${t.price}`);
+      attachTooltip(btn, t.desc);
       startTacticsEl.appendChild(btn);
     });
 
@@ -569,7 +569,7 @@
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       btn.addEventListener('click', () => useSkillByName(k));
-      attachTooltip(btn, `${k}<br>${s.desc}`);
+      attachTooltip(btn, s.desc);
       battleSkillsEl.appendChild(btn);
     });
 
@@ -582,7 +582,7 @@
       btn.className = 'tactic-btn';
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
-      btn.addEventListener('click', () => useTacticByName(k));
+      if (k !== "Emergency Platform") btn.addEventListener('click', () => useTacticByName(k));
       attachTooltip(btn, `${k}<br>${t.desc}`);
       battleTacticsEl.appendChild(btn);
     });
@@ -1546,7 +1546,7 @@
         applyTacticOpponent("Dizzydizzy");
         return;
       }
-      if (tacticCandidates.includes("Speed") && opponent.hp <= opponent.maxHp * 0.7 && Math.random() < 0.6) {
+      if (tacticCandidates.includes("Speed") && opponent.hp <= opponent.maxHp * 0.6 && Math.random() < 0.5) {
         applyTacticOpponent("Speed");
         return;
       }
