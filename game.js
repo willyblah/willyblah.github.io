@@ -94,7 +94,6 @@
         ownedTactics,
         profile: profile.profile || null
       };
-
     } catch (e) {
       loadError = `Load fail: ${e.message}`;
       return getDefaultSave();
@@ -1519,7 +1518,6 @@
         let attack = s.attack;
         const tile = tileAt(opponent.x, opponent.y);
         if (k === "Minitrident" && tile === 3) attack += 30;
-        else if (k === "Rage" && tile === 5) attack += 50;
         if (attack >= player.hp && Math.random() < (s.acc || 1)) {
           resolveOpponentSkill(k);
           return;
@@ -1553,7 +1551,6 @@
         let attack = s.attack;
         const tile = tileAt(opponent.x, opponent.y);
         if (k === "Minitrident" && tile === 3) attack += 30;
-        else if (k === "Rage" && tile === 5) attack += 50;
         let expectedAcc = s.acc || 1;
         if (userData.profile === 'Warrior') expectedAcc = 0.5;
         const expected = attack * expectedAcc;
