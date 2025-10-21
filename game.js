@@ -136,6 +136,30 @@
   }
   let userData = await loadSave();
 
+  const TILE_IMAGES = {};
+  const tileTypes = {
+    0: 'void.png',
+    1: 'grass.png',
+    2: 'wall.png',
+    3: 'water.png',
+    4: 'lava.png',
+    5: 'cactus.png',
+    6: 'cobweb.png',
+    7: 'mist.png'
+  };
+  async function loadTileImages() {
+    const promises = Object.keys(tileTypes).map(async (type) => {
+      const img = new Image();
+      img.src = `assets/${tileTypes[type]}`;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = () => { resolve(); };
+      });
+      TILE_IMAGES[type] = img;
+    });
+    await Promise.all(promises);
+  }
+
   // ---- UI references ----
   const screens = {
     start: $("#start-screen"),
@@ -960,6 +984,7 @@
   }
   async function showStart() {
     userData = await loadSave();
+    if (Object.keys(TILE_IMAGES).length === 0) await loadTileImages();
     showScreen('start');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
@@ -1287,37 +1312,7 @@
       for (let c = 0; c < MAP_W; c++) {
         const t = grid[r][c];
         const x = c * TILE, y = r * TILE;
-        if (t === 0) {
-          ctx.fillStyle = '#7fbfff'; ctx.fillRect(x, y, TILE, TILE);
-          drawDownArrow(ctx, c * TILE + TILE / 2, r * TILE + TILE / 2, TILE * 0.4);
-        } else if (t === 1) {
-          ctx.fillStyle = '#6b8f5a'; ctx.fillRect(x, y, TILE, TILE);
-        } else if (t === 2) {
-          ctx.fillStyle = '#5b5b5b'; ctx.fillRect(x, y, TILE, TILE);
-        } else if (t === 3) {
-          ctx.fillStyle = '#4ea0ff'; ctx.fillRect(x, y, TILE, TILE);
-        } else if (t === 4) {
-          ctx.fillStyle = '#ff7a4d'; ctx.fillRect(x, y, TILE, TILE);
-        } else if (t === 5) {
-          ctx.fillStyle = '#7ad17a'; ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = '#2a7a2a'; ctx.fillRect(x + TILE * 0.45, y + TILE * 0.2, TILE * 0.1, TILE * 0.6);
-        } else if (t === 6) {
-          ctx.fillStyle = '#8fb8c6'; ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `${TILE}px Inter`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('*', x + TILE / 2, y + TILE / 2 + 8);
-        } else if (t === 7) {
-          ctx.fillStyle = '#8b5a2b';
-          ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `${TILE * 0.4}px Inter`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('MIST', x + TILE / 2, y + TILE / 2);
-        }
-        ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.strokeRect(x, y, TILE, TILE);
+        if (TILE_IMAGES[t]) ctx.drawImage(TILE_IMAGES[t], x, y, TILE, TILE);
       }
     }
 
@@ -1354,26 +1349,6 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(letter, a.x, a.y);
-
-    ctx.restore();
-  }
-
-  function drawDownArrow(ctx, x, y, size) {
-    ctx.save();
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-
-    // vertical line
-    ctx.beginPath();
-    ctx.moveTo(x, y - size / 2);
-    ctx.lineTo(x, y + size / 4);
-    ctx.stroke();
-    // arrow head
-    ctx.beginPath();
-    ctx.moveTo(x - size / 4, y);
-    ctx.lineTo(x, y + size / 2);
-    ctx.lineTo(x + size / 4, y);
-    ctx.stroke();
 
     ctx.restore();
   }
