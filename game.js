@@ -1450,13 +1450,7 @@
     }
   }
 
-  function animateHPChange(el, pct) {
-    if (pct === 0)
-      el.style.transition = 'width 600ms ease';
-    else
-      el.style.transition = 'width 400ms ease';
-    el.style.width = `${pct}%`;
-  }
+  function animateHPChange(el, pct) { el.style.width = `${pct}%`; }
 
   // ---- Opponent AI ----
   function opponentAIChoose() {

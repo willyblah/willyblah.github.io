@@ -298,6 +298,7 @@ b {
   height: 100%;
   width: 100%;
   background: linear-gradient(90deg, #34d399, #10b981);
+  transition: width 400ms ease;
 }
 
 .skill-btn,
