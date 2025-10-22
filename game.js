@@ -134,7 +134,7 @@
       hideLoading();
     }
   }
-  let userData = await loadSave();
+  let userData = null;
 
   const TILE_IMAGES = {};
   const tileTypes = {
