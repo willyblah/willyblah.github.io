@@ -145,7 +145,8 @@
     4: 'lava.png',
     5: 'cactus.png',
     6: 'cobweb.png',
-    7: 'mist.png'
+    7: 'mist.png',
+    8: 'slime.png'
   };
   async function loadTileImages() {
     const promises = Object.keys(tileTypes).map(async (type) => {
@@ -1284,7 +1285,7 @@
     const c = Math.floor(x / TILE);
     const r = Math.floor(y / TILE);
     if (inBounds(r, c) && grid[r][c] === 0) {
-      grid[r][c] = 1;
+      grid[r][c] = 8;
       showMessage("Emergency Platform activated!", 'success');
       return true;
     }
@@ -1308,13 +1309,14 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
         const t = grid[r][c];
         const x = c * TILE, y = r * TILE;
         if (TILE_IMAGES[t]) ctx.drawImage(TILE_IMAGES[t], x, y, TILE, TILE);
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.lineWidth = 1;
         ctx.strokeRect(x, y, TILE, TILE);
       }
     }
@@ -1336,7 +1338,6 @@
   }
 
   function drawActor(a, letter) {
-    ctx.save();
     ctx.beginPath();
     ctx.fillStyle = a.color;
     ctx.strokeStyle = '#000';
@@ -1352,8 +1353,6 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(letter, a.x, a.y);
-
-    ctx.restore();
   }
 
   // ---- Skill & tactic usage ----
