@@ -208,7 +208,9 @@
   const shopSkillsEl = $("#shop-skills");
   const shopTacticsEl = $("#shop-tactics");
   const btnBuyHealth = $("#btn-buy-health");
+  const btnBuyHealth2 = $("#btn-buy-health-2");
   const healthAmountInput = $("#health-amount");
+  const diamondAmountInput = $("#diamond-amount");
   const btnChangeProfile = $("#btn-change-profile");
   const btnShopBack = $("#btn-shop-back");
 
@@ -721,9 +723,16 @@
     }
     buyHealth(amount);
   });
-  healthAmountInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
+  btnBuyHealth2.addEventListener('click', () => {
+    const diamonds = parseInt(diamondAmountInput.value, 10);
+    if (isNaN(diamonds) || diamonds < 1) {
+      showMessage("Enter a number that is greater than 1.", 'error');
+      return;
+    }
+    buyHealth(userData.profile === 'Villager' ? diamonds * 10 : diamonds * 5);
+  })
+  healthAmountInput.addEventListener('click', (e) => { e.stopPropagation(); });
+  diamondAmountInput.addEventListener('click', (e) => { e.stopPropagation(); })
   btnChangeProfile.addEventListener('click', async () => {
     if (userData.diamonds < 5) {
       showMessage("Not enough diamonds.", 'error');

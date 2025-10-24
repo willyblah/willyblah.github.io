@@ -352,7 +352,7 @@ b {
   border-radius: 8px
 }
 
-#health-amount {
+.amount {
   width: 60px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -363,7 +363,7 @@ b {
   border-radius: 4px;
 }
 
-#health-amount:focus {
+.amount:focus {
   outline: none;
   border-color: var(--accent);
 }
