@@ -1313,6 +1313,9 @@
         const t = grid[r][c];
         const x = c * TILE, y = r * TILE;
         if (TILE_IMAGES[t]) ctx.drawImage(TILE_IMAGES[t], x, y, TILE, TILE);
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, TILE, TILE);
       }
     }
 
