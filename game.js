@@ -136,7 +136,9 @@
   }
   let userData = null;
 
+  let imageLoaded = false;
   const TILE_IMAGES = {};
+  const SKILL_IMAGES = {};
   const tileTypes = {
     0: 'void.png',
     1: 'grass.png',
@@ -148,17 +150,34 @@
     7: 'mist.png',
     8: 'slime.png'
   };
+
   async function loadTileImages() {
+    showLoading();
     const promises = Object.keys(tileTypes).map(async (type) => {
       const img = new Image();
       img.src = `assets/${tileTypes[type]}`;
       await new Promise((resolve) => {
         img.onload = resolve;
-        img.onerror = () => { resolve(); };
+        img.onerror = resolve;
       });
       TILE_IMAGES[type] = img;
     });
     await Promise.all(promises);
+    hideLoading();
+  }
+  async function loadSkillImages() {
+    showLoading();
+    const promises = Object.keys(SKILLS).map(async (k) => {
+      const img = new Image();
+      img.src = `assets/${k.toLowerCase().replace(/ /g, '_')}.png`;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      SKILL_IMAGES[k] = img;
+    });
+    await Promise.all(promises);
+    hideLoading();
   }
 
   // ---- UI references ----
@@ -329,9 +348,7 @@
   function octileHeuristic(r, c, tr, tc, minTileCost = 1.0) {
     const dx = Math.abs(c - tc);
     const dy = Math.abs(r - tr);
-    const D = 1.0;
-    const D2 = Math.SQRT2;
-    return minTileCost * (D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy));
+    return minTileCost * ((dx + dy) + (Math.SQRT2 - 2) * Math.min(dx, dy));
   }
 
   function getSkillAttackValue(name, actor) {
@@ -472,6 +489,73 @@
     toggleFogMode() { this.fogMode = !this.fogMode; }
     applySpeedBoost(durationMs) { this.speedEffectEnd = Date.now() + durationMs; }
     getSpeed() { return this.speedEffectEnd > Date.now() ? this.speed * 1.5 : this.speed; }
+  }
+
+  let projectiles = [];
+  let animating = false;
+
+  class Projectile {
+    constructor(fromActor, toActor, skillName, outcome, onDeactivate) {
+      this.x = fromActor.x;
+      this.y = fromActor.y;
+      this.targetX = toActor.x;
+      this.targetY = toActor.y;
+      this.speed = 500;
+      this.traveled = 0;
+      this.active = true;
+      this.image = SKILL_IMAGES[skillName];
+      this.outcome = outcome;
+      this.onDeactivate = onDeactivate || (() => { });
+      this.originalDist = Math.hypot(toActor.x - this.x, toActor.y - this.y);
+
+      const dx = toActor.x - this.x;
+      const dy = toActor.y - this.y;
+      const mag = Math.hypot(dx, dy) || 1;
+      this.vx = (dx / mag) * this.speed;
+      this.vy = (dy / mag) * this.speed;
+
+      if (outcome === 'miss') {
+        const deviate = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 18);
+        const cos = Math.cos(deviate);
+        const sin = Math.sin(deviate);
+        this.vx = this.vx * cos - this.vy * sin;
+        this.vy = this.vx * sin + this.vy * cos;
+      }
+    }
+
+    update(dt) {
+      if (!this.active) return;
+
+      this.traveled += this.speed * dt;
+      if (this.outcome === 'toofar' && this.traveled >= 400) {
+        this.active = false;
+        this.onDeactivate(this.outcome);
+        return;
+      }
+
+      const nextX = this.x + this.vx * dt;
+      const nextY = this.y + this.vy * dt;
+      if (this.outcome !== 'miss' && tileAt(nextX, nextY) === 2) {
+        this.active = false;
+        this.onDeactivate('blocked');
+        return;
+      }
+      this.x = nextX;
+      this.y = nextY;
+
+      if (this.outcome === 'hit' && Math.hypot(this.targetX - this.x, this.targetY - this.y) < 15) {
+        this.active = false;
+        this.onDeactivate(this.outcome);
+        return;
+      }
+      if (this.outcome === 'miss' && this.traveled > this.originalDist * 1.1) {
+        this.active = false;
+        this.onDeactivate(this.outcome);
+        return;
+      }
+    }
+
+    draw(ctx) { if (this.active && this.image) ctx.drawImage(this.image, this.x - 16, this.y - 16, 32, 32); }
   }
 
   // State
@@ -748,11 +832,9 @@
     grid = generateMap();
     spawns = spawnPositions(grid);
 
-    const startHp = userData.maxHealth;
-    player = new Actor(spawns.first[0], spawns.first[1], startHp, 140, '#10b981');
+    player = new Actor(spawns.first[0], spawns.first[1], userData.maxHealth, 140, '#10b981');
     player.fogMode = false;
     opponent = new Actor(spawns.second[0], spawns.second[1], opponentHealth, 140, '#ef4444');
-
     opponent.isChasing = false;
 
     battlePlayerSkills = {}; battlePlayerTactics = {};
@@ -994,7 +1076,13 @@
   }
   async function showStart() {
     userData = await loadSave();
-    if (Object.keys(TILE_IMAGES).length === 0) await loadTileImages();
+    if (!imageLoaded) {
+      console.log('loading images');
+      await loadTileImages();
+      await loadSkillImages();
+      imageLoaded = true;
+      console.log('done');
+    }
     showScreen('start');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
@@ -1148,6 +1236,9 @@
     handleHazards(player, dt);
     handleHazards(opponent, dt);
 
+    projectiles.forEach(p => p.update(dt));
+    projectiles = projectiles.filter(p => p.active);
+
     if (isVoidAt(player.x, player.y)) {
       if (battlePlayerTactics["Emergency Platform"] && battlePlayerTactics["Emergency Platform"] > 0) {
         if (useEmergencyPlatform(player.x, player.y)) {
@@ -1213,8 +1304,7 @@
     if (tileUnder === 3) factor = 0.6;
     if (tileUnder === 6) factor = 0.5;
 
-    const originalX = actor.x;
-    const originalY = actor.y;
+    const originalX = actor.x, originalY = actor.y;
 
     actor.x += actor.vx * dt * factor;
     actor.y += actor.vy * dt * factor;
@@ -1320,7 +1410,6 @@
 
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.lineWidth = 1;
-
     for (let r = 0; r < MAP_H; r++) {
       for (let c = 0; c < MAP_W; c++) {
         const t = grid[r][c];
@@ -1333,6 +1422,8 @@
     drawActor(player, 'P');
     if (!player.fogMode || Math.hypot(opponent.x - player.x, opponent.y - player.y) <= 80)
       drawActor(opponent, 'O');
+
+    projectiles.forEach(p => p.draw(ctx));
 
     if (player && player.fogMode) {
       fogCtx.fillStyle = '#707070';
@@ -1373,25 +1464,37 @@
       showMessage(`No <b>${name}</b> left!`, 'warn');
       return;
     }
+    if (animating) return;
 
-    const attackVal = getSkillAttackValue(name, player);
-    if (inRangeAndLOS(player, opponent) && (Math.random() < (SKILLS[name].acc || 1))) {
-      opponent.applyDamage(attackVal);
-      showMessage(`You used <b>${name}</b>! Opponent loses ${attackVal} HP.`, 'info');
-      animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
-    } else if (!inRangeAndLOS(player, opponent)) {
-      showMessage(`You used <b>${name}</b>! Too far or blocked by wall.`, 'warn');
-    } else {
-      showMessage(`You used <b>${name}</b>! Missed!`, 'warn');
-    }
+    let outcome;
+    if (!inRangeAndLOS(player, opponent))
+      outcome = Math.hypot(opponent.x - player.x, opponent.y - player.y) > 400 ? 'toofar' : 'blocked';
+    else
+      outcome = Math.random() < (SKILLS[name].acc || 1) ? 'hit' : 'miss';
 
-    if (battlePlayerSkills[name] !== Infinity) {
-      battlePlayerSkills[name] = Math.max(0, (battlePlayerSkills[name] || 0) - 1);
-      if (battlePlayerSkills[name] === 0) showMessage(`You have no <b>${name}</b> left.`, 'warn');
-    }
-    renderBattleUI(); // refresh UI skill counts
+    animating = true;
+    projectiles.push(new Projectile(player, opponent, name, outcome, (resolvedOutcome) => {
+      animating = false;
+      const attackVal = getSkillAttackValue(name, player);
+      if (resolvedOutcome === 'hit') {
+        opponent.applyDamage(attackVal);
+        showMessage(`You used <b>${name}</b>! Opponent loses ${attackVal} HP.`, 'info');
+        animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
+      } else if (resolvedOutcome === 'miss') {
+        showMessage(`You used <b>${name}</b>! Missed!`, 'warn');
+      } else if (resolvedOutcome === 'blocked') {
+        showMessage(`You used <b>${name}</b>! Blocked by wall.`, 'warn');
+      } else if (resolvedOutcome === 'toofar') {
+        showMessage(`You used <b>${name}</b>! Too far.`, 'warn');
+      }
 
-    nextTurnAfterAction('player');
+      if (battlePlayerSkills[name] !== Infinity) {
+        battlePlayerSkills[name] = Math.max(0, (battlePlayerSkills[name] || 0) - 1);
+        if (battlePlayerSkills[name] === 0) showMessage(`You have no <b>${name}</b> left.`, 'warn');
+      }
+      renderBattleUI();
+      nextTurnAfterAction('player');
+    }));
   }
 
   function useTacticByName(name) {
@@ -1430,7 +1533,7 @@
   }
 
   function switchTurn() {
-    if (!state.battle) return;
+    if (!state.battle || animating) return;
     if (state.battle.currentActor === 'player') {
       state.battle.currentActor = 'opponent';
       state.battle.turnEndTime = Date.now() + state.battle.turnTimeout;
@@ -1465,7 +1568,7 @@
 
   // ---- Opponent AI ----
   function opponentAIChoose() {
-    if (!state.battle || state.battle.currentActor !== 'opponent') return;
+    if (!state.battle || state.battle.currentActor !== 'opponent' || animating) return;
     if (!inRangeAndLOS(opponent, player)) {
       opponent.isChasing = true;
       return;
@@ -1549,7 +1652,7 @@
     const dx = actorB.x - actorA.x;
     const dy = actorB.y - actorA.y;
     const dist = Math.hypot(dx, dy);
-    if (dist > 410) return false;
+    if (dist > 400) return false;
     const steps = Math.ceil(dist / 8);
     for (let i = 1; i < steps; i++) {
       const sx = actorA.x + (dx * (i / steps));
@@ -1565,20 +1668,36 @@
       switchTurn();
       return;
     }
-    const attackVal = getSkillAttackValue(name, opponent);
+    if (animating) return;
+
     let acc = SKILLS[name].acc || 1;
     if (userData.profile === 'Warrior') acc = 0.5;
-    if (inRangeAndLOS(opponent, player) && Math.random() < acc) {
-      player.applyDamage(attackVal);
-      showMessage(`Opponent used <b>${name}</b>! You lose ${attackVal} HP.`, 'error');
-      animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
-    } else if (!inRangeAndLOS(opponent, player)) {
-      showMessage(`Opponent used <b>${name}</b>! Too far or blocked by wall.`, 'info');
-    } else {
-      showMessage(`Opponent used <b>${name}</b>! Missed!`, 'info');
-    }
-    if (battleOppSkills[name] !== Infinity) battleOppSkills[name] = Math.max(0, battleOppSkills[name] - 1);
-    nextTurnAfterAction('opponent');
+
+    let outcome;
+    if (!inRangeAndLOS(opponent, player))
+      outcome = Math.hypot(player.x - opponent.x, player.y - opponent.y) > 400 ? 'toofar' : 'blocked';
+    else
+      outcome = Math.random() < acc ? 'hit' : 'miss';
+
+    animating = true;
+    projectiles.push(new Projectile(opponent, player, name, outcome, (resolvedOutcome) => {
+      animating = false;
+      const attackVal = getSkillAttackValue(name, opponent);
+      if (resolvedOutcome === 'hit') {
+        player.applyDamage(attackVal);
+        showMessage(`Opponent used <b>${name}</b>! You lose ${attackVal} HP.`, 'error');
+        animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
+      } else if (resolvedOutcome === 'miss') {
+        showMessage(`Opponent used <b>${name}</b>! Missed!`, 'info');
+      } else if (resolvedOutcome === 'blocked') {
+        showMessage(`Opponent used <b>${name}</b>! Blocked by wall.`, 'info');
+      } else if (resolvedOutcome === 'toofar') {
+        showMessage(`Opponent used <b>${name}</b>! Too far.`, 'info');
+      }
+
+      if (battleOppSkills[name] !== Infinity) battleOppSkills[name] = Math.max(0, battleOppSkills[name] - 1);
+      nextTurnAfterAction('opponent');
+    }));
   }
 
   function applyTacticOpponent(name) {
@@ -1671,8 +1790,8 @@
       showMessage(`You lose. ${message}`, 'error');
     }
     if (userData.profile === 'Trickster') {
-      if (Date.now() - battle.startTime < 11000) {
-        showMessage('Sorry, no cheating the prize! You must battle for a while.', 'warn', 3000);
+      if (Date.now() - battle.startTime < 11000 && !playerWon) {
+        showMessage('Sorry, no cheating the prize!', 'warn', 3000);
       } else {
         showPrize();
         return;
