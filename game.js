@@ -505,7 +505,7 @@
       this.active = true;
       this.image = SKILL_IMAGES[skillName];
       this.outcome = outcome;
-      this.onDeactivate = onDeactivate || (() => { });
+      this.onDeactivate = onDeactivate;
       this.originalDist = Math.hypot(toActor.x - this.x, toActor.y - this.y);
 
       const dx = toActor.x - this.x;
@@ -706,9 +706,7 @@
         <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? Math.ceil(s.price / 2) : s.price) : '—'}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
-      row.querySelector('button').addEventListener('click', () => {
-        buySkill(k);
-      });
+      row.querySelector('button').addEventListener('click', () => { buySkill(k); });
       shopSkillsEl.appendChild(row);
     });
     Object.keys(TACTICS).forEach(k => {
@@ -720,9 +718,7 @@
         <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? Math.ceil(t.price / 2) : t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
-      row.querySelector('button').addEventListener('click', () => {
-        buyTactic(k);
-      });
+      row.querySelector('button').addEventListener('click', () => { buyTactic(k); });
       shopTacticsEl.appendChild(row);
     });
   }
@@ -735,9 +731,7 @@
       positionTooltip(e.pageX, e.pageY);
     });
     node.addEventListener('mousemove', (e) => positionTooltip(e.pageX, e.pageY));
-    node.addEventListener('mouseleave', () => {
-      tooltip.classList.add('hidden');
-    });
+    node.addEventListener('mouseleave', () => { tooltip.classList.add('hidden'); });
   }
   function positionTooltip(x, y) {
     tooltip.style.left = (x + 12) + 'px';
@@ -938,9 +932,7 @@
     return tactics;
   }
 
-  btnBattle.addEventListener('click', () => {
-    showScale();
-  });
+  btnBattle.addEventListener('click', () => { showScale(); });
   btnShop.addEventListener('click', () => {
     showShop();
     renderShopUI();
@@ -949,9 +941,7 @@
     if (!state.battle) return;
     finalizeEndBattle(false, "You surrendered.");
   });
-  btnShopBack.addEventListener('click', () => {
-    showStart();
-  });
+  btnShopBack.addEventListener('click', () => { showStart(); });
   btnStopScale.addEventListener('click', () => {
     if (!scaleStopped) {
       stopScale();
@@ -967,9 +957,7 @@
     if (!scaleStopped) stopScale();
     showStart();
   });
-  levelSelect.addEventListener('change', () => {
-    currentLevel = levelSelect.value;
-  });
+  levelSelect.addEventListener('change', () => { currentLevel = levelSelect.value; });
   btnSignup.addEventListener('click', () => showSignup());
   btnLogin.addEventListener('click', () => showLogin());
   btnLogout.addEventListener('click', async () => {
@@ -1064,9 +1052,7 @@
       prizeResult.textContent = 'Sorry, no prize.';
     }
   });
-  btnPrizeBack.addEventListener('click', () => {
-    showStart();
-  });
+  btnPrizeBack.addEventListener('click', () => { showStart(); });
 
   // UI screens
   function showScreen(name) {
@@ -1775,7 +1761,7 @@
   }
 
   async function finalizeEndBattle(playerWon, message) {
-    if (!state.battle || state.battle.battleOver) return;
+    if (!state.battle?.battleOver) return;
     const battle = state.battle;
     state.battle.battleOver = true;
     stopBattle();
