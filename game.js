@@ -1761,7 +1761,7 @@
   }
 
   async function finalizeEndBattle(playerWon, message) {
-    if (!state.battle?.battleOver) return;
+    if (state.battle?.battleOver) return;
     const battle = state.battle;
     state.battle.battleOver = true;
     stopBattle();
