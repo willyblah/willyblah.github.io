@@ -9,7 +9,7 @@ A simple battle game where you fight opponents on islands filled with hazards an
 3. **Choose a Profile**: Each one has a unique bonus.
 4. **Battle**: Click "Battle" -> Stop the scale to set opponent strength -> Fight!
    - **Controls**: WASD to move, click skills/tactics to use them.
-   - **Skills**: Use them to kill your opponent! Each skill has a unique attack value and accuracy.
+   - **Skills**: Use them to kill your opponent! Each skill has an attack value and accuracy. Initially, you have Spear and Knife.
    - **Tactics**: They give special effects or do special things.
 5. **Shop**: Spend diamonds on skills, tactics, and health.
 

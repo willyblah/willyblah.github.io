@@ -14,7 +14,7 @@
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #071025 0%, #081827 60%);
+  background: #071025;
   color: #dbe6f0;
   min-height: 100vh;
   padding: 24px;
@@ -37,7 +37,7 @@ b {
 .screen {
   max-width: 1200px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   padding: 18px;
   border-radius: 12px;
   position: relative;
@@ -84,7 +84,6 @@ b {
   margin-top: 6px;
   margin-bottom: 8px;
   color: var(--accent);
-  letter-spacing: 1px
 }
 
 .hud {
@@ -297,7 +296,7 @@ b {
 .hp-fill {
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, #34d399, #10b981);
+  background: #10b981;
   transition: width 400ms ease;
 }
 
@@ -321,7 +320,6 @@ b {
 }
 
 .skill-count {
-  opacity: 0.9;
   font-weight: 600;
   margin-left: auto;
   color: var(--muted)
@@ -405,7 +403,6 @@ b {
   font-size: 14px;
   opacity: 0;
   transform: translateX(10px);
-  pointer-events: auto;
   animation: msgIn 300ms forwards;
 }
 
