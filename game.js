@@ -282,42 +282,23 @@
     grid[islandH / 2][0] = 7;
     grid[islandH / 2][MAP_W - 1] = 7;
 
-    // walls (obstacles)
-    for (let i = 0; i < 60; i++) {
-      const r = oy + 1 + Math.floor(Math.random() * (islandH - 2));
-      const c = ox + 1 + Math.floor(Math.random() * (islandW - 2));
-      if (Math.random() < 0.28) grid[r][c] = 2;
+    const hazards = [
+      { type: 2, count: 60, prob: 0.28 },
+      { type: 3, count: 18, prob: 0.50 },
+      { type: 4, count: 12, prob: 0.35 },
+      { type: 5, count: 16, prob: 0.40 },
+      { type: 6, count: 12, prob: 0.30 },
+      { type: 0, count: 18, prob: 0.35 }
+    ];
+    for (const { type, count, prob } of hazards) {
+      for (let i = 0; i < count; i++) {
+        const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
+        const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
+        if (grid[r][c] === 1 && Math.random() < prob)
+          grid[r][c] = type;
+      }
     }
-    // water
-    for (let i = 0; i < 18; i++) {
-      const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
-      const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
-      if (grid[r][c] === 1 && Math.random() < 0.5) grid[r][c] = 3;
-    }
-    // lava
-    for (let i = 0; i < 12; i++) {
-      const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
-      const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
-      if (grid[r][c] === 1 && Math.random() < 0.35) grid[r][c] = 4;
-    }
-    // cactus
-    for (let i = 0; i < 16; i++) {
-      const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
-      const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
-      if (grid[r][c] === 1 && Math.random() < 0.4) grid[r][c] = 5;
-    }
-    // cobweb
-    for (let i = 0; i < 12; i++) {
-      const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
-      const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
-      if (grid[r][c] === 1 && Math.random() < 0.3) grid[r][c] = 6;
-    }
-    // holes
-    for (let i = 0; i < 18; i++) {
-      const r = oy + 2 + Math.floor(Math.random() * (islandH - 4));
-      const c = ox + 2 + Math.floor(Math.random() * (islandW - 4));
-      if (grid[r][c] === 1 && Math.random() < 0.35) grid[r][c] = 0;
-    }
+
     return grid;
   }
 
@@ -559,8 +540,7 @@
   }
 
   // State
-  let grid = generateMap();
-  let spawns = spawnPositions(grid);
+  let grid, spawns;
 
   let player = null, opponent = null;
   let battlePlayerSkills = {}, battlePlayerTactics = {};
@@ -641,12 +621,13 @@
       btnLogin.classList.add('hidden');
       btnLogout.classList.remove('hidden');
       userGreeting.classList.remove('hidden');
-      userGreeting.textContent = user.user_metadata.username || 'Anonymous';
+      userGreeting.textContent = user.user_metadata.username;
     } else {
       btnSignup.classList.remove('hidden');
       btnLogin.classList.remove('hidden');
       btnLogout.classList.add('hidden');
       userGreeting.classList.add('hidden');
+      showMessage('Log in to save your progress and get a profile!', 'info', 5000);
     }
   }
 
@@ -1063,11 +1044,9 @@
   async function showStart() {
     userData = await loadSave();
     if (!imageLoaded) {
-      console.log('loading images');
       await loadTileImages();
       await loadSkillImages();
       imageLoaded = true;
-      console.log('done');
     }
     showScreen('start');
     renderStartUI();
