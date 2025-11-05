@@ -209,9 +209,6 @@
   const playerHealthText = $("#player-health-text");
   const opponentHealthText = $("#opponent-health-text");
   const turnIndicatorEl = $("#turn-indicator");
-  const btnBattle = $("#btn-battle");
-  const btnShop = $("#btn-shop");
-  const btnSurrender = $("#btn-surrender");
 
   const scaleDot = $("#scale-dot");
   const btnStopScale = $("#btn-stop-scale");
@@ -226,21 +223,14 @@
   const shopDiamondsEl = $("#shop-diamonds");
   const shopSkillsEl = $("#shop-skills");
   const shopTacticsEl = $("#shop-tactics");
-  const btnBuyHealth = $("#btn-buy-health");
-  const btnBuyHealth2 = $("#btn-buy-health-2");
   const healthAmountInput = $("#health-amount");
   const diamondAmountInput = $("#diamond-amount");
-  const btnChangeProfile = $("#btn-change-profile");
-  const btnShopBack = $("#btn-shop-back");
 
   const signupForm = $("#signup-form");
   const loginForm = $("#login-form");
   const btnSignup = $("#btn-signup");
   const btnLogin = $("#btn-login");
   const btnLogout = $("#btn-logout");
-  const btnSignupBack = $("#btn-signup-back");
-  const btnLoginBack = $("#btn-login-back");
-  const btnVerifyBack = $("#btn-verify-back");
   const signupUsername = $("#signup-username");
   const signupEmail = $("#signup-email");
   const signupPassword = $("#signup-password");
@@ -251,13 +241,11 @@
   const prizeDot = $("#prize-dot");
   const btnStopPrize = $("#btn-stop-prize");
   const prizeResult = $("#prize-result p");
-  const btnPrizeBack = $("#btn-prize-back");
 
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
   const fogCanvas = document.createElement('canvas');
-  fogCanvas.width = canvas.width;
-  fogCanvas.height = canvas.height;
+  fogCanvas.width = canvas.width; fogCanvas.height = canvas.height;
   const fogCtx = fogCanvas.getContext('2d');
 
   // Game constants
@@ -274,9 +262,6 @@
     for (let r = oy; r < oy + islandH; r++)
       for (let c = ox; c < ox + islandW; c++)
         grid[r][c] = 1;
-
-    grid[oy + 1][ox + 1] = 1;
-    grid[oy + islandH - 2][ox + islandW - 2] = 1;
 
     // mist tiles
     grid[islandH / 2][0] = 7;
@@ -472,8 +457,7 @@
     getSpeed() { return this.speedEffectEnd > Date.now() ? this.speed * 1.5 : this.speed; }
   }
 
-  let projectiles = [];
-  let animating = false;
+  let projectile = null;
 
   class Projectile {
     constructor(fromActor, toActor, skillName, outcome, onDeactivate) {
@@ -774,7 +758,7 @@
       hideLoading();
     }
   }
-  btnBuyHealth.addEventListener('click', () => {
+  $("#btn-buy-health").addEventListener('click', () => {
     const amount = parseInt(healthAmountInput.value, 10);
     if (isNaN(amount) || amount < 5 || amount % 5 !== 0) {
       showMessage("Enter a multiple of 5 (minimum 5).", 'error');
@@ -782,7 +766,7 @@
     }
     buyHealth(amount);
   });
-  btnBuyHealth2.addEventListener('click', () => {
+  $("#btn-buy-health-2").addEventListener('click', () => {
     const diamonds = parseInt(diamondAmountInput.value, 10);
     if (isNaN(diamonds) || diamonds < 1) {
       showMessage("Enter a number that is greater than 1.", 'error');
@@ -792,7 +776,7 @@
   })
   healthAmountInput.addEventListener('click', (e) => { e.stopPropagation(); });
   diamondAmountInput.addEventListener('click', (e) => { e.stopPropagation(); })
-  btnChangeProfile.addEventListener('click', async () => {
+  $("#btn-change-profile").addEventListener('click', async () => {
     if (userData.diamonds < 5) {
       showMessage("Not enough diamonds.", 'error');
       return;
@@ -913,16 +897,16 @@
     return tactics;
   }
 
-  btnBattle.addEventListener('click', () => { showScale(); });
-  btnShop.addEventListener('click', () => {
+  $("#btn-battle").addEventListener('click', () => { showScale(); });
+  $("#btn-shop").addEventListener('click', () => {
     showShop();
     renderShopUI();
   });
-  btnSurrender.addEventListener('click', () => {
+  $("#btn-surrender").addEventListener('click', () => {
     if (!state.battle) return;
     finalizeEndBattle(false, "You surrendered.");
   });
-  btnShopBack.addEventListener('click', () => { showStart(); });
+  $("#btn-shop-back").addEventListener('click', () => { showStart(); });
   btnStopScale.addEventListener('click', () => {
     if (!scaleStopped) {
       stopScale();
@@ -946,9 +930,9 @@
     userData = getDefaultSave();
     showStart();
   });
-  btnSignupBack.addEventListener('click', () => showStart());
-  btnLoginBack.addEventListener('click', () => showStart());
-  btnVerifyBack.addEventListener('click', () => showStart());
+  $("#btn-signup-back").addEventListener('click', () => showStart());
+  $("#btn-login-back").addEventListener('click', () => showStart());
+  $("#btn-verify-back").addEventListener('click', () => showStart());
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = signupUsername.value.trim();
@@ -1033,7 +1017,7 @@
       prizeResult.textContent = 'Sorry, no prize.';
     }
   });
-  btnPrizeBack.addEventListener('click', () => { showStart(); });
+  $("#btn-prize-back").addEventListener('click', () => { showStart(); });
 
   // UI screens
   function showScreen(name) {
@@ -1201,8 +1185,10 @@
     handleHazards(player, dt);
     handleHazards(opponent, dt);
 
-    projectiles.forEach(p => p.update(dt));
-    projectiles = projectiles.filter(p => p.active);
+    if (projectile) {
+      projectile.update(dt);
+      if (projectile?.active === false) projectile = null;
+    }
 
     if (isVoidAt(player.x, player.y)) {
       if (battlePlayerTactics["Emergency Platform"] && battlePlayerTactics["Emergency Platform"] > 0) {
@@ -1388,7 +1374,7 @@
     if (!player.fogMode || Math.hypot(opponent.x - player.x, opponent.y - player.y) <= 80)
       drawActor(opponent, 'O');
 
-    projectiles.forEach(p => p.draw(ctx));
+    if (projectile) projectile.draw(ctx);
 
     if (player && player.fogMode) {
       fogCtx.fillStyle = '#707070';
@@ -1429,7 +1415,7 @@
       showMessage(`No <b>${name}</b> left!`, 'warn');
       return;
     }
-    if (animating) return;
+    if (projectile) return;
 
     let outcome;
     if (!inRangeAndLOS(player, opponent))
@@ -1437,9 +1423,8 @@
     else
       outcome = Math.random() < (SKILLS[name].acc || 1) ? 'hit' : 'miss';
 
-    animating = true;
-    projectiles.push(new Projectile(player, opponent, name, outcome, (resolvedOutcome) => {
-      animating = false;
+    projectile = new Projectile(player, opponent, name, outcome, (resolvedOutcome) => {
+      projectile = null;
       const attackVal = getSkillAttackValue(name, player);
       if (resolvedOutcome === 'hit') {
         opponent.applyDamage(attackVal);
@@ -1459,7 +1444,7 @@
       }
       renderBattleUI();
       nextTurnAfterAction('player');
-    }));
+    });
   }
 
   function useTacticByName(name) {
@@ -1498,7 +1483,7 @@
   }
 
   function switchTurn() {
-    if (!state.battle || animating) return;
+    if (!state.battle || projectile) return;
     if (state.battle.currentActor === 'player') {
       state.battle.currentActor = 'opponent';
       state.battle.turnEndTime = Date.now() + state.battle.turnTimeout;
@@ -1533,7 +1518,7 @@
 
   // ---- Opponent AI ----
   function opponentAIChoose() {
-    if (!state.battle || state.battle.currentActor !== 'opponent' || animating) return;
+    if (!state.battle || state.battle.currentActor !== 'opponent' || projectile) return;
     if (!inRangeAndLOS(opponent, player)) {
       opponent.isChasing = true;
       return;
@@ -1633,7 +1618,7 @@
       switchTurn();
       return;
     }
-    if (animating) return;
+    if (projectile) return;
 
     let acc = SKILLS[name].acc || 1;
     if (userData.profile === 'Warrior') acc = 0.5;
@@ -1644,9 +1629,8 @@
     else
       outcome = Math.random() < acc ? 'hit' : 'miss';
 
-    animating = true;
-    projectiles.push(new Projectile(opponent, player, name, outcome, (resolvedOutcome) => {
-      animating = false;
+    projectile = new Projectile(opponent, player, name, outcome, (resolvedOutcome) => {
+      projectile = null;
       const attackVal = getSkillAttackValue(name, opponent);
       if (resolvedOutcome === 'hit') {
         player.applyDamage(attackVal);
@@ -1662,7 +1646,7 @@
 
       if (battleOppSkills[name] !== Infinity) battleOppSkills[name] = Math.max(0, battleOppSkills[name] - 1);
       nextTurnAfterAction('opponent');
-    }));
+    });
   }
 
   function applyTacticOpponent(name) {
