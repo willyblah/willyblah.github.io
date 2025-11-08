@@ -829,7 +829,7 @@
       currentActor: null,
       turnEndTime: null,
       turnTimeout: 10000,
-      battleOver: false,
+      over: false,
       startTime: Date.now()
     };
 
@@ -1128,7 +1128,7 @@
     lastTime = ts;
     update(dt);
     draw();
-    if (!state.battle || state.battle.battleOver) { stopBattle(); return; }
+    if (!state.battle || state.battle.over) { stopBattle(); return; }
     rafId = requestAnimationFrame(loop);
   }
 
@@ -1524,7 +1524,7 @@
       return;
     }
 
-    const delay = 800 + Math.random() * 1000;
+    const delay = 500 + Math.random() * 1000;
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
@@ -1542,8 +1542,8 @@
         if (safe) moveTowards(opponent, safe.x, safe.y);
       }
 
-      const candidates = Object.keys(SKILLS).filter(k => (battleOppSkills[k] && battleOppSkills[k] !== 0) || battleOppSkills[k] === Infinity);
-      const tacticCandidates = Object.keys(TACTICS).filter(k => (battleOppTactics[k] && battleOppTactics[k] > 0));
+      const candidates = Object.keys(SKILLS).filter(k => battleOppSkills[k] > 0 || battleOppSkills[k] === Infinity);
+      const tacticCandidates = Object.keys(TACTICS).filter(k => battleOppTactics[k] > 0);
 
       // try to find instant finisher
       for (const k of candidates) {
@@ -1724,9 +1724,9 @@
   }
 
   async function finalizeEndBattle(playerWon, message) {
-    if (state.battle?.battleOver) return;
+    if (state.battle?.over) return;
     const battle = state.battle;
-    state.battle.battleOver = true;
+    state.battle.over = true;
     stopBattle();
 
     let awarded = Math.floor(opponentStrength * 15) + (currentLevel === 'normal' ? 2 : 12);
