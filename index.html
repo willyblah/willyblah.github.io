@@ -48,7 +48,7 @@
         <button id="btn-shop" class="btn shop"><i class="fa-solid fa-shop"></i> Shop</button>
       </div>
 
-      <p class="hint">Version: 1.7.1</p>
+      <p class="hint">Version: 1.8 (beta) - The Math Update!</p>
       <a class="hint" href="https://github.com/willyblah/thegame" target="_blank">GitHub</a> <span class="hint">|</span>
       <a class="hint" href="https://github.com/willyblah/thegame/blob/main/README.md" target="_blank">About</a>
     </div>
@@ -208,6 +208,30 @@
         <p></p>
       </div>
       <div class="controls"><button id="btn-prize-back" class="btn">Back</button></div>
+    </div>
+    <div id="math-screen" class="screen hidden">
+      <div class="math-topbar">
+        <div class="left">
+          <div id="math-problem-type">—</div>
+        </div>
+        <div class="center">
+          <div id="math-countdown">10s</div>
+        </div>
+        <div class="right">
+          <button id="btn-math-quit" class="btn primary">Quit</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div id="math-question" class="math-question">—</div>
+      </div>
+      <div class="math-choices">
+        <button class="btn math-choice" data-choice="A" id="math-choice-a">A</button>
+        <button class="btn math-choice" data-choice="B" id="math-choice-b">B</button>
+        <button class="btn math-choice" data-choice="C" id="math-choice-c">C</button>
+      </div>
+      <div class="controls">
+        <div class="hint">Answer a question correctly to build 20 attack. Try not to make mistakes.</div>
+      </div>
     </div>
   </div>
 

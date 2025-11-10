@@ -34,7 +34,9 @@
     Dizzydizzy: { price: 15, desc: "Gives you two extra turns." },
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
     Speed: { price: 8, desc: "Speed +50% for 10s." },
-    "Emergency Platform": { price: 15, desc: "Automatically saves you from falling into the void." }
+    "Emergency Platform": { price: 15, desc: "Automatically saves you from falling into the void." },
+    // "Math": { price: 16, desc: "Solve math to build up attack. One mistake flips it on you." }
+    "Math": { price: 1, desc: "Solve math to build up attack. One mistake flips it on you." }
   };
 
   const LEVELS = {
@@ -190,7 +192,8 @@
     login: $("#login-screen"),
     verify: $("#verify-screen"),
     profile: $("#profile-screen"),
-    prize: $("#prize-screen")
+    prize: $("#prize-screen"),
+    math: $("#math-screen")
   };
 
   const tooltip = $("#tooltip");
@@ -241,6 +244,14 @@
   const prizeDot = $("#prize-dot");
   const btnStopPrize = $("#btn-stop-prize");
   const prizeResult = $("#prize-result p");
+
+  const mathTypeEl = $("#math-problem-type");
+  const mathCountdownEl = $("#math-countdown");
+  const mathQuestionEl = $("#math-question");
+  const btnMathQuit = $("#btn-math-quit");
+  const btnChoiceA = $("#math-choice-a");
+  const btnChoiceB = $("#math-choice-b");
+  const btnChoiceC = $("#math-choice-c");
 
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
@@ -542,6 +553,99 @@
   let prizeDirection = 1;
   let prizePosition = 0;
   let prizeStopped = false;
+
+  // ---- Math problems ----
+  let mathProblems = null;
+  async function loadMathProblems() {
+    if (mathProblems) return mathProblems;
+    try {
+      const res = await fetch('math.txt', { cache: 'no-cache' });
+      mathProblems = parseMathText(await res.text());
+      return mathProblems;
+    } catch (e) {
+      showMessage(`Failed to load math problems: ${e.message}`, 'error', 3000);
+      return [];
+    }
+  }
+  function parseMathText(text) {
+    const lines = text.split(/\r?\n/);
+    const blocks = [];
+    let cur = [];
+    for (const line of lines) {
+      if (line.trim() === '') {
+        if (cur.length) { blocks.push(cur); cur = []; }
+      } else {
+        cur.push(line);
+      }
+    }
+    if (cur.length) blocks.push(cur);
+    const items = [];
+    for (const blk of blocks) {
+      if (blk.length < 4) continue;
+      const m = blk[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
+      if (!m) continue;
+      const type = parseInt(m[1], 10);
+      const difficulty = parseInt(m[2], 10);
+      const question = m[3].trim();
+      const choices = {};
+      let correct = null;
+      for (let i = 1; i < Math.min(4, blk.length); i++) {
+        const cm = blk[i].match(/^([aA|bB|cC])\s*:\s*(.+)$/);
+        if (!cm) continue;
+        const rawKey = cm[1];
+        const key = rawKey.toUpperCase();
+        const val = cm[2].trim();
+        choices[key] = val;
+        if (rawKey === rawKey.toUpperCase()) correct = key;
+      }
+      if (!choices.A || !choices.B || !choices.C || !correct) continue;
+      items.push({ type, difficulty, question, choices, correct });
+    }
+    const byDiff = {};
+    for (const it of items) {
+      byDiff[it.difficulty] = byDiff[it.difficulty] || [];
+      byDiff[it.difficulty].push(it);
+    }
+    const diffs = Object.keys(byDiff).map(x => parseInt(x, 10)).sort((a, b) => a - b);
+    const out = [];
+    for (const d of diffs) {
+      const arr = byDiff[d];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      out.push(...arr);
+    }
+    return out;
+  }
+  function renderMathHtml(str) {
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      if (str[i] === '^' && i + 1 < str.length) {
+        let supContent = '';
+        i++;
+        if (str[i] === '{') {
+          i++;
+          while (i < str.length && str[i] !== '}') {
+            supContent += str[i];
+            i++;
+          }
+          if (i >= str.length || str[i] !== '}') {
+            result += '^{' + supContent;
+            if (i < str.length) result += str[i];
+            continue;
+          }
+        } else {
+          supContent = str[i];
+        }
+        result += `<sup>${supContent}</sup>`;
+      } else {
+        result += str[i];
+      }
+    }
+    return result;
+  }
+  let mathSession = null;
 
   // keyboard
   const keysDown = {};
@@ -855,7 +959,7 @@
   }
 
   function generateOppTactics() {
-    const allTactics = Object.keys(TACTICS);
+    const allTactics = Object.keys(TACTICS).filter(t => t !== 'Math');
     const tactics = {};
     allTactics.forEach(tactic => { tactics[tactic] = 0; });
 
@@ -1018,12 +1122,25 @@
     }
   });
   $("#btn-prize-back").addEventListener('click', () => { showStart(); });
+  btnMathQuit.addEventListener('click', () => {
+    if (!mathSession) return;
+    finalizeMathSession(false);
+  });
+  [btnChoiceA, btnChoiceB, btnChoiceC].forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!mathSession) return;
+      const pick = btn.dataset.choice;
+      handleMathChoice(pick);
+    });
+  });
 
   // UI screens
   function showScreen(name) {
     Object.keys(screens).forEach(screen => {
       screens[screen].classList.toggle('hidden', screen !== name);
     });
+    tooltip.classList.add('hidden');
+    tooltip.innerHTML = '';
   }
   async function showStart() {
     userData = await loadSave();
@@ -1066,6 +1183,113 @@
   function showLogin() { showScreen('login'); }
   function showVerify() { showScreen('verify'); }
   function showProfileSelect() { showScreen('profile'); }
+  function showMath() { showScreen('math'); }
+
+  async function startMathSession() {
+    const problems = await loadMathProblems();
+    if (!problems) {
+      showMessage('No math problems.', 'error', 3000);
+      return false;
+    }
+    mathSession = {
+      problems,
+      index: 0,
+      accumulatedAttack: 0,
+      anyFailure: false,
+      timerId: null,
+      deadline: 0
+    };
+    if (state.battle) state.battle.paused = true;
+    showMath();
+    nextMathProblem();
+    return true;
+  }
+  function nextMathProblem() {
+    if (!mathSession) return;
+    if (mathSession.index >= mathSession.problems.length) {
+      finalizeMathSession(false);
+      return;
+    }
+    renderMathProblem(mathSession.problems[mathSession.index]);
+    startMathTimer();
+  }
+  function renderMathProblem(p) {
+    mathTypeEl.textContent = p.type === 1 ? 'Simplify the polynomial' : 'Factor the polynomial';
+    mathQuestionEl.innerHTML = renderMathHtml(p.question);
+    btnChoiceA.innerHTML = `<b>A:</b> ${renderMathHtml(p.choices.A)}`;
+    btnChoiceB.innerHTML = `<b>B:</b> ${renderMathHtml(p.choices.B)}`;
+    btnChoiceC.innerHTML = `<b>C:</b> ${renderMathHtml(p.choices.C)}`;
+  }
+  function startMathTimer() {
+    if (!mathSession) return;
+    if (mathSession.timerId) clearInterval(mathSession.timerId);
+    mathSession.deadline = Date.now() + 10000;
+    updateMathCountdown();
+    mathSession.timerId = setInterval(() => {
+      updateMathCountdown();
+      if (Date.now() >= mathSession.deadline) {
+        clearInterval(mathSession.timerId);
+        mathSession.timerId = null;
+        mathSession.anyFailure = true;
+        finalizeMathSession(true);
+      }
+    }, 200);
+  }
+  function updateMathCountdown() {
+    const now = Date.now();
+    const remainMs = Math.max(0, (mathSession?.deadline || now) - now);
+    mathCountdownEl.textContent = `${Math.ceil(remainMs / 1000)}s`;
+  }
+  function handleMathChoice(choice) {
+    if (!mathSession) return;
+    const correct = mathSession.problems[mathSession.index].correct === choice;
+    clearInterval(mathSession.timerId);
+    mathSession.timerId = null;
+    if (correct) {
+      mathSession.accumulatedAttack += 20;
+      const btn = document.querySelector(`#math-choice-${choice.toLowerCase()}`);
+      btn.classList.add('correct');
+      setTimeout(() => btn.classList.remove('correct'), 500);
+      setTimeout(() => {
+        mathSession.index += 1;
+        nextMathProblem();
+      }, 500);
+    } else {
+      mathSession.anyFailure = true;
+      finalizeMathSession(false);
+    }
+  }
+  function finalizeMathSession(timedOut) {
+    if (!mathSession) return;
+    clearInterval(mathSession.timerId);
+    mathSession.timerId = null;
+    const attack = mathSession.accumulatedAttack;
+    const failed = mathSession.anyFailure || timedOut;
+    mathSession = null;
+    if (state.battle) showBattle();
+    else showStart();
+    if (!state.battle || !player || !opponent) return;
+    if (state.battle) {
+      state.battle.paused = false;
+      state.battle.turnEndTime = Date.now() + (state.battle.turnTimeout || 10000);
+    }
+    if (attack <= 0) {
+      showMessage('No attack accumulated.', 'warn');
+      nextTurnAfterAction('player');
+      return;
+    }
+    if (failed) {
+      player.applyDamage(attack);
+      animateHPChange(playerHpFill, (player.hp / player.maxHp) * 100);
+      showMessage(`Math backfires! You take ${attack} damage.`, 'error');
+    } else {
+      opponent.applyDamage(attack);
+      animateHPChange(opponentHpFill, (opponent.hp / opponent.maxHp) * 100);
+      showMessage(`Math succeeds! Opponent takes ${attack} damage.`, 'success');
+    }
+    renderBattleUI();
+    nextTurnAfterAction('player');
+  }
 
   function startScale() {
     scaleStopped = false;
@@ -1134,6 +1358,7 @@
 
   function update(dt) {
     if (!state.battle) return;
+    if (state.battle.paused) return;
     const now = Date.now();
 
     // movement
@@ -1463,6 +1688,12 @@
     } else if (name === "Speed") {
       player.applySpeedBoost(10000);
       showMessage(`You used <b>${name}</b>! Speed up 10s.`, 'info');
+    } else if (name === "Math") {
+      showMessage(`You used <b>${name}</b>! Solve the math problems.`, 'info');
+      battlePlayerTactics[name] = Math.max(0, battlePlayerTactics[name] - 1);
+      renderBattleUI();
+      startMathSession();
+      return;
     }
 
     battlePlayerTactics[name] = Math.max(0, battlePlayerTactics[name] - 1);
