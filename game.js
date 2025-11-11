@@ -560,8 +560,7 @@
     if (mathProblems) return mathProblems;
     showLoading();
     try {
-      const res = await fetch(new URL('math.txt', window.location.href).href, { cache: 'no-cache' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const res = await fetch('math.txt', { cache: 'no-cache' });
       mathProblems = parseMathText(await res.text());
       return mathProblems;
     } catch (e) {

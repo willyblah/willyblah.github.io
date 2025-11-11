@@ -39,8 +39,10 @@ jobs:
       - name: Build and minify
         run: npm run build
 
-      - name: Copy assets to dist
-        run: cp -r assets dist/assets
+      - name: Copy files to dist
+        run: |
+          cp -r assets dist/
+          cp math.txt dist/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
