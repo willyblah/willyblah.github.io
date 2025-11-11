@@ -558,6 +558,7 @@
   let mathProblems = null;
   async function loadMathProblems() {
     if (mathProblems) return mathProblems;
+    showLoading();
     try {
       const res = await fetch('math.txt', { cache: 'no-cache' });
       mathProblems = parseMathText(await res.text());
@@ -565,6 +566,8 @@
     } catch (e) {
       showMessage(`Failed to load math problems: ${e.message}`, 'error', 3000);
       return [];
+    } finally {
+      hideLoading();
     }
   }
   function parseMathText(text) {
@@ -1249,8 +1252,8 @@
       mathSession.accumulatedAttack += 20;
       const btn = document.querySelector(`#math-choice-${choice.toLowerCase()}`);
       btn.classList.add('correct');
-      setTimeout(() => btn.classList.remove('correct'), 500);
       setTimeout(() => {
+        btn.classList.remove('correct')
         mathSession.index += 1;
         nextMathProblem();
       }, 500);
