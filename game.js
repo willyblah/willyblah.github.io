@@ -560,7 +560,8 @@
     if (mathProblems) return mathProblems;
     showLoading();
     try {
-      const res = await fetch('/math.txt', { cache: 'no-cache' });
+      const res = await fetch(new URL('math.txt', window.location.href).href, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       mathProblems = parseMathText(await res.text());
       return mathProblems;
     } catch (e) {
@@ -718,7 +719,7 @@
       btnLogin.classList.remove('hidden');
       btnLogout.classList.add('hidden');
       userGreeting.classList.add('hidden');
-      showMessage('Log in to save your progress and get a profile!', 'info', 5000);
+      showMessage('Log in to save your progress and get a profile!', 'info', 3000);
     }
   }
 
