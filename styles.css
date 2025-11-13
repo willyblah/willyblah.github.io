@@ -423,14 +423,6 @@ b {
   background: linear-gradient(90deg, #ef4444, #b91c1c);
 }
 
-.math-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  margin-bottom: 8px;
-}
-
 .math-question {
   font-size: 20px;
   font-weight: 600;
@@ -452,6 +444,25 @@ b {
 .math-choice.correct {
   background: #10b981 !important;
   animation: glow-flash 0.5s ease-out forwards;
+}
+
+.math-stats {
+  font-size: 15px;
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+#math-attack,
+#math-difficulty {
+  transition: all 0.3s ease;
+}
+
+.math-attack-update {
+  color: #10b981;
+}
+
+.math-difficulty-update {
+  color: #f59e0b;
 }
 
 @keyframes glow-flash {

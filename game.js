@@ -252,6 +252,8 @@
   const btnChoiceA = $("#math-choice-a");
   const btnChoiceB = $("#math-choice-b");
   const btnChoiceC = $("#math-choice-c");
+  const mathAttackEl = $("#math-attack");
+  const mathDiffEl = $("#math-difficulty");
 
   const canvas = $("#game-canvas");
   const ctx = canvas.getContext("2d");
@@ -584,25 +586,22 @@
     if (cur.length) blocks.push(cur);
     const items = [];
     for (const blk of blocks) {
-      if (blk.length < 4) continue;
       const m = blk[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
-      if (!m) continue;
       const type = parseInt(m[1], 10);
       const difficulty = parseInt(m[2], 10);
       const question = m[3].trim();
       const choices = {};
       let correct = null;
       for (let i = 1; i < Math.min(4, blk.length); i++) {
-        const cm = blk[i].match(/^([aA|bB|cC])\s*:\s*(.+)$/);
-        if (!cm) continue;
+        const cm = blk[i].match(/^([a-cA-C])\s*:\s*(.+)$/);
         const rawKey = cm[1];
         const key = rawKey.toUpperCase();
         const val = cm[2].trim();
         choices[key] = val;
         if (rawKey === rawKey.toUpperCase()) correct = key;
       }
-      if (!choices.A || !choices.B || !choices.C || !correct) continue;
-      items.push({ type, difficulty, question, choices, correct });
+      const timeLimit = 5000 + difficulty * 5000;
+      items.push({ type, difficulty, question, choices, correct, timeLimit });
     }
     const byDiff = {};
     for (const it of items) {
@@ -1197,12 +1196,15 @@
     mathSession = {
       problems,
       index: 0,
-      accumulatedAttack: 0,
+      accAttack: 0,
+      prevDiff: 1,
       anyFailure: false,
       timerId: null,
       deadline: 0
     };
     if (state.battle) state.battle.paused = true;
+    mathAttackEl.textContent = 'Attack: 0';
+    mathDiffEl.textContent = 'Difficulty: 1';
     showMath();
     nextMathProblem();
     return true;
@@ -1213,11 +1215,23 @@
       finalizeMathSession(false);
       return;
     }
-    renderMathProblem(mathSession.problems[mathSession.index]);
+    const p = mathSession.problems[mathSession.index];
+    if (p.difficulty > mathSession.prevDiff) {
+      mathDiffEl.textContent = `Difficulty: ${p.difficulty}`;
+      mathDiffEl.classList.add('math-difficulty-update');
+      setTimeout(() => {
+        mathDiffEl.classList.remove('math-difficulty-update');
+      }, 300);
+      mathSession.prevDiff = p.difficulty;
+    }
+    renderMathProblem(p);
     startMathTimer();
   }
   function renderMathProblem(p) {
-    mathTypeEl.textContent = p.type === 1 ? 'Simplify the polynomial' : 'Factor the polynomial';
+    if (p.type === 1) mathTypeEl.textContent = 'Simplify the polynomial';
+    else if (p.type === 2) mathTypeEl.textContent = 'Factor the polynomial';
+    else if (p.type === 3) mathTypeEl.textContent = 'Name the polynomial';
+    else mathTypeEl.textContent = 'Solve the problem';
     mathQuestionEl.innerHTML = renderMathHtml(p.question);
     btnChoiceA.innerHTML = `<b>A:</b> ${renderMathHtml(p.choices.A)}`;
     btnChoiceB.innerHTML = `<b>B:</b> ${renderMathHtml(p.choices.B)}`;
@@ -1226,7 +1240,8 @@
   function startMathTimer() {
     if (!mathSession) return;
     if (mathSession.timerId) clearInterval(mathSession.timerId);
-    mathSession.deadline = Date.now() + 10000;
+    const timeLimit = mathSession.problems[mathSession.index].timeLimit;
+    mathSession.deadline = Date.now() + timeLimit;
     updateMathCountdown();
     mathSession.timerId = setInterval(() => {
       updateMathCountdown();
@@ -1249,7 +1264,12 @@
     clearInterval(mathSession.timerId);
     mathSession.timerId = null;
     if (correct) {
-      mathSession.accumulatedAttack += 20;
+      mathSession.accAttack += 20;
+      mathAttackEl.textContent = `Attack: ${mathSession.accAttack}`;
+      mathAttackEl.classList.add('math-attack-update');
+      setTimeout(() => {
+        mathAttackEl.classList.remove('math-attack-update');
+      }, 300);
       const btn = document.querySelector(`#math-choice-${choice.toLowerCase()}`);
       btn.classList.add('correct');
       setTimeout(() => {
@@ -1266,7 +1286,7 @@
     if (!mathSession) return;
     clearInterval(mathSession.timerId);
     mathSession.timerId = null;
-    const attack = mathSession.accumulatedAttack;
+    const attack = mathSession.accAttack;
     const failed = mathSession.anyFailure || timedOut;
     mathSession = null;
     if (state.battle) showBattle();
@@ -1740,11 +1760,9 @@
     if (actor === 'player') {
       const remain = Math.max(0, Math.ceil((state.battle.turnEndTime - now) / 1000));
       turnIndicatorEl.textContent = `Your turn — ${remain}s`;
-    } else if (actor === 'opponent') {
+    } else {
       const remain = Math.max(0, Math.ceil((state.battle.turnEndTime - now) / 1000));
       turnIndicatorEl.textContent = `Opponent's turn — ${remain}s`;
-    } else {
-      turnIndicatorEl.textContent = 'Waiting...';
     }
   }
 
@@ -1752,7 +1770,7 @@
 
   // ---- Opponent AI ----
   function opponentAIChoose() {
-    if (!state.battle || state.battle.currentActor !== 'opponent' || projectile) return;
+    if (state.battle?.currentActor !== 'opponent' || projectile || Date.now() < state.battle.startPeriodEnd) return;
     if (!inRangeAndLOS(opponent, player)) {
       opponent.isChasing = true;
       return;
@@ -1762,7 +1780,7 @@
     opponent.aiTimer = Date.now() + delay;
 
     setTimeout(() => {
-      if (!state.battle || state.battle.currentActor !== 'opponent') return;
+      if (state.battle?.currentActor !== 'opponent') return;
 
       if (!inRangeAndLOS(opponent, player)) {
         opponent.isChasing = true;
@@ -1847,7 +1865,7 @@
   }
 
   function resolveOpponentSkill(name) {
-    if (!state.battle || state.battle.currentActor !== 'opponent') return;
+    if (state.battle?.currentActor !== 'opponent') return;
     if (!battleOppSkills[name] || (battleOppSkills[name] <= 0 && battleOppSkills[name] !== Infinity)) {
       switchTurn();
       return;
@@ -1884,7 +1902,7 @@
   }
 
   function applyTacticOpponent(name) {
-    if (!state.battle || state.battle.currentActor !== 'opponent') return;
+    if (state.battle?.currentActor !== 'opponent') return;
     if (!battleOppTactics[name] || battleOppTactics[name] <= 0) { switchTurn(); return; }
     if (name === "Dizzydizzy") {
       opponent.extraTurns += 2;
