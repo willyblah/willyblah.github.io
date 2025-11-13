@@ -143,7 +143,7 @@ a: 4x(x - 1)(1 - x)
 b: (2x^2 - 2x)(2 - 2x)
 C: -4x(x - 1)^2
 
-4,5: If P(x) = (x^2 + 5x + 6)(x^2 + 3x + 2), coefficient of x^3 = ?
+4,5: What is the coefficient of x^3 in (x^2 + 5x + 6)(x^2 + 3x + 2)?
 A: 8
 B: 15
 c: 21
