@@ -37,7 +37,7 @@ b {
 .screen {
   max-width: 1200px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass);
   padding: 18px;
   border-radius: 12px;
   position: relative;
