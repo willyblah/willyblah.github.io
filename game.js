@@ -487,6 +487,11 @@
 
       const dx = toActor.x - this.x;
       const dy = toActor.y - this.y;
+
+      this.angle = Math.atan2(dy, dx);
+      this.x += Math.cos(this.angle) * 20;
+      this.y += Math.sin(this.angle) * 20;
+
       const mag = Math.hypot(dx, dy) || 1;
       this.vx = (dx / mag) * this.speed;
       this.vy = (dy / mag) * this.speed;
@@ -497,6 +502,7 @@
         const sin = Math.sin(deviate);
         this.vx = this.vx * cos - this.vy * sin;
         this.vy = this.vx * sin + this.vy * cos;
+        this.angle = Math.atan2(this.vy, this.vx);
       }
     }
 
@@ -532,7 +538,14 @@
       }
     }
 
-    draw(ctx) { if (this.active && this.image) ctx.drawImage(this.image, this.x - 16, this.y - 16, 32, 32); }
+    draw(ctx) {
+      if (!this.active) return;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle + Math.PI / 4);
+      ctx.drawImage(this.image, -16, -16, 32, 32);
+      ctx.restore();
+    }
   }
 
   // State
@@ -729,6 +742,11 @@
   }
 
   function renderBattleUI() {
+    playerHpFill.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+    opponentHpFill.style.width = `${Math.max(0, (opponent.hp / opponent.maxHp) * 100)}%`;
+    playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
+    opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
+
     battleSkillsEl.innerHTML = "";
     const shownSkills = getShownBattleSkills();
     shownSkills.forEach((k) => {
