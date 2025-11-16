@@ -729,12 +729,6 @@
   }
 
   function renderBattleUI() {
-    playerHpFill.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
-    opponentHpFill.style.width = `${Math.max(0, (opponent.hp / opponent.maxHp) * 100)}%`;
-
-    if (playerHealthText) playerHealthText.textContent = `${Math.max(0, Math.floor(player.hp))}/${player.maxHp}`;
-    if (opponentHealthText) opponentHealthText.textContent = `${Math.max(0, Math.floor(opponent.hp))}/${opponent.maxHp}`;
-
     battleSkillsEl.innerHTML = "";
     const shownSkills = getShownBattleSkills();
     shownSkills.forEach((k) => {
@@ -775,7 +769,7 @@
       row.className = 'shop-item';
       row.innerHTML = `<div><b>${k}</b><div style="font-size:13px;color:var(--muted)">${s.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${s.price ? (userData.profile === 'Villager' ? Math.ceil(s.price / 2) : s.price) : '—'}</div>
+        <div style="color:var(--muted);font-weight:600">${s.price ? s.price : '—'}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => { buySkill(k); });
@@ -788,7 +782,7 @@
       if (k === 'Math') row.style.border = '2px solid green';
       row.innerHTML = `<div><b>${k}</b><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
-        <div style="color:var(--muted);font-weight:600">${userData.profile === 'Villager' ? Math.ceil(t.price / 2) : t.price}</div>
+        <div style="color:var(--muted);font-weight:600">${t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
       row.querySelector('button').addEventListener('click', () => { buyTactic(k); });
@@ -881,9 +875,9 @@
       return;
     }
     buyHealth(userData.profile === 'Villager' ? diamonds * 10 : diamonds * 5);
-  })
+  });
   healthAmountInput.addEventListener('click', (e) => { e.stopPropagation(); });
-  diamondAmountInput.addEventListener('click', (e) => { e.stopPropagation(); })
+  diamondAmountInput.addEventListener('click', (e) => { e.stopPropagation(); });
   $("#btn-change-profile").addEventListener('click', async () => {
     if (userData.diamonds < 5) {
       showMessage("Not enough diamonds.", 'error');
@@ -926,9 +920,7 @@
     Object.keys(TACTICS).forEach(k => { battlePlayerTactics[k] = userData.ownedTactics[k] || 0; });
 
     renderBattleUI();
-
-    const sidepanel = document.querySelector('.sidepanel');
-    if (sidepanel) sidepanel.scrollTop = 0;
+    document.querySelector('.sidepanel').scrollTop = 0;
 
     // turn init
     const startPeriodMs = 5000;
@@ -1145,6 +1137,8 @@
     });
     tooltip.classList.add('hidden');
     tooltip.innerHTML = '';
+    if (name === 'math') document.body.classList.add('math-active');
+    else document.body.classList.remove('math-active');
   }
   async function showStart() {
     userData = await loadSave();
@@ -1789,7 +1783,7 @@
         return;
       }
 
-      // if standing on hazard, try to move away first
+      // move away from hazard
       const tileHere = tileAt(opponent.x, opponent.y);
       if (tileHere === 4 || tileHere === 5) {
         const safe = findNearbySafePosition(opponent);

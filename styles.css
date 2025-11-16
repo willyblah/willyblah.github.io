@@ -406,7 +406,6 @@ b {
   animation: msgIn 300ms forwards;
 }
 
-/* message types */
 .message.info {
   background: linear-gradient(90deg, #0ea5e9, #0284c7);
 }
@@ -421,6 +420,14 @@ b {
 
 .message.error {
   background: linear-gradient(90deg, #ef4444, #b91c1c);
+}
+
+body.math-active {
+  background-image: url('assets/math.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .math-question {
