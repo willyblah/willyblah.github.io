@@ -485,6 +485,9 @@
       this.onDeactivate = onDeactivate;
       this.originalDist = Math.hypot(toActor.x - this.x, toActor.y - this.y);
 
+      const lower = skillName.toLowerCase();
+      this.aim = (lower.includes('spear') || lower.includes('knife') || lower.includes('sword') || lower == 'minitrident');
+
       const dx = toActor.x - this.x;
       const dy = toActor.y - this.y;
 
@@ -526,12 +529,8 @@
       this.x = nextX;
       this.y = nextY;
 
-      if (this.outcome === 'hit' && Math.hypot(this.targetX - this.x, this.targetY - this.y) < 15) {
-        this.active = false;
-        this.onDeactivate(this.outcome);
-        return;
-      }
-      if (this.outcome === 'miss' && this.traveled > this.originalDist * 1.1) {
+      if ((this.outcome === 'hit' && Math.hypot(this.targetX - this.x, this.targetY - this.y) < 15)
+        || (this.outcome === 'miss' && this.traveled > this.originalDist * 1.1)) {
         this.active = false;
         this.onDeactivate(this.outcome);
         return;
@@ -542,7 +541,7 @@
       if (!this.active) return;
       ctx.save();
       ctx.translate(this.x, this.y);
-      ctx.rotate(this.angle + Math.PI / 4);
+      if (this.aim) ctx.rotate(this.angle + Math.PI / 4);
       ctx.drawImage(this.image, -16, -16, 32, 32);
       ctx.restore();
     }
@@ -1998,7 +1997,7 @@
     let awarded = Math.floor(opponentStrength * 15) + (currentLevel === 'normal' ? 2 : 12);
     if (playerWon) {
       if (userData.profile === 'Miner') awarded *= 2;
-      userData.diamonds = (userData.diamonds || 0) + awarded;
+      userData.diamonds += awarded;
       await save(userData);
       showMessage(`You win! ${message} Diamonds earned: ${awarded}`, 'success');
     } else {

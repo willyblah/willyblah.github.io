@@ -446,6 +446,7 @@ body.math-active {
 .math-choice {
   text-align: left;
   white-space: normal;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .math-choice.correct {
