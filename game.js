@@ -1239,6 +1239,7 @@
     }
     renderMathProblem(p);
     startMathTimer();
+    console.log(p.correct); // remove later
   }
   function renderMathProblem(p) {
     if (p.type === 1) mathTypeEl.textContent = 'Simplify the polynomial';
