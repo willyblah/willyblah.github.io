@@ -710,7 +710,6 @@
       const count = userData.ownedTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
-      if (k === 'Math') btn.style.border = '2px solid green';
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       attachTooltip(btn, t.desc);
@@ -767,7 +766,6 @@
       const count = battlePlayerTactics[k] || 0;
       const btn = document.createElement('div');
       btn.className = 'tactic-btn';
-      if (k === 'Math') btn.style.border = '2px solid green';
       btn.dataset.name = k;
       btn.innerHTML = `<div>${k}</div><div class="skill-count">${count}</div>`;
       if (k !== "Emergency Platform") btn.addEventListener('click', () => useTacticByName(k));
@@ -796,7 +794,6 @@
       const t = TACTICS[k];
       const row = document.createElement('div');
       row.className = 'shop-item';
-      if (k === 'Math') row.style.border = '2px solid green';
       row.innerHTML = `<div><b>${k}</b><div style="font-size:13px;color:var(--muted)">${t.desc}</div></div>
         <div style="display:flex;gap:8px;align-items:center">
         <div style="color:var(--muted);font-weight:600">${t.price}</div>
@@ -1239,7 +1236,6 @@
     }
     renderMathProblem(p);
     startMathTimer();
-    console.log(p.correct); // remove later
   }
   function renderMathProblem(p) {
     if (p.type === 1) mathTypeEl.textContent = 'Simplify the polynomial';

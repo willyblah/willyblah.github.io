@@ -405,19 +405,19 @@ b {
 }
 
 .message.info {
-  background: linear-gradient(90deg, #0ea5e9, #0284c7);
+  background: #0284c7;
 }
 
 .message.success {
-  background: linear-gradient(90deg, #10b981, #059669);
+  background: #059669;
 }
 
 .message.warn {
-  background: linear-gradient(90deg, #f59e0b, #f97316);
+  background: #f97316;
 }
 
 .message.error {
-  background: linear-gradient(90deg, #ef4444, #b91c1c);
+  background: #b91c1c;
 }
 
 body.math-active {
