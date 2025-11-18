@@ -588,21 +588,20 @@
     const byDiff = {};
     for (const block of blocks) {
       const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean);
-      const headerMatch = lines[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
-      const type = +headerMatch[1];
-      const difficulty = +headerMatch[2];
-      const question = headerMatch[3].trim();
+      const header = lines[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
+      const type = +header[1];
+      const difficulty = +header[2];
+      const question = header[3].trim();
       const choices = {};
       let correct = null;
       for (let i = 1; i < lines.length; i++) {
-        const match = lines[i].match(/^([a-cA-C])\s*:\s*(.+)$/);
-        const key = match[1].toUpperCase();
-        choices[key] = match[2].trim();
-        if (match[1] === match[1].toUpperCase()) correct = key;
+        const m = lines[i].match(/^([a-cA-C])\s*:\s*(.+)$/);
+        const key = m[1].toUpperCase();
+        choices[key] = m[2].trim();
+        if (m[1] === m[1].toUpperCase()) correct = key;
       }
-      const timeLimit = 5000 + difficulty * 5000;
-      if (!byDiff[difficulty]) byDiff[difficulty] = [];
-      byDiff[difficulty].push({ type, difficulty, question, choices, correct, timeLimit });
+      byDiff[difficulty] ??= [];
+      byDiff[difficulty].push({ type, difficulty, question, choices, correct, timeLimit: 5000 + difficulty * 5000 });
     }
     const result = [];
     const diffs = Object.keys(byDiff).map(Number).sort((a, b) => a - b);
@@ -612,8 +611,7 @@
         const j = Math.floor(Math.random() * (i + 1));
         [problems[i], problems[j]] = [problems[j], problems[i]];
       }
-      problems = problems.slice(0, 5);
-      result.push(...problems);
+      result.push(...problems.slice(0, 5));
     }
     return result;
   }
@@ -1223,9 +1221,6 @@
     }
     renderMathProblem(p);
     startMathTimer();
-    // remove later
-    console.log('difficulty:', p.difficulty)
-    console.log('correct:', p.correct);
   }
   function renderMathProblem(p) {
     if (p.type === 1) mathTypeEl.textContent = 'Simplify the polynomial';
