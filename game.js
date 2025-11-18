@@ -548,7 +548,7 @@
   }
 
   // State
-  let grid, spawns;
+  let grid, spawns, tileTimestamps;
 
   let player = null, opponent = null;
   let battlePlayerSkills = {}, battlePlayerTactics = {};
@@ -584,52 +584,38 @@
     }
   }
   function parseMathText(text) {
-    const lines = text.split(/\r?\n/);
-    const blocks = [];
-    let cur = [];
-    for (const line of lines) {
-      if (line.trim() === '') {
-        if (cur.length) { blocks.push(cur); cur = []; }
-      } else {
-        cur.push(line);
-      }
-    }
-    if (cur.length) blocks.push(cur);
-    const items = [];
-    for (const blk of blocks) {
-      const m = blk[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
-      const type = parseInt(m[1], 10);
-      const difficulty = parseInt(m[2], 10);
-      const question = m[3].trim();
+    const blocks = text.trim().split(/\n\s*\n/);
+    const byDiff = {};
+    for (const block of blocks) {
+      const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      const headerMatch = lines[0].match(/^(\d+)\s*,\s*(\d+)\s*:\s*(.+)$/);
+      const type = +headerMatch[1];
+      const difficulty = +headerMatch[2];
+      const question = headerMatch[3].trim();
       const choices = {};
       let correct = null;
-      for (let i = 1; i < Math.min(4, blk.length); i++) {
-        const cm = blk[i].match(/^([a-cA-C])\s*:\s*(.+)$/);
-        const rawKey = cm[1];
-        const key = rawKey.toUpperCase();
-        const val = cm[2].trim();
-        choices[key] = val;
-        if (rawKey === rawKey.toUpperCase()) correct = key;
+      for (let i = 1; i < lines.length; i++) {
+        const match = lines[i].match(/^([a-cA-C])\s*:\s*(.+)$/);
+        const key = match[1].toUpperCase();
+        choices[key] = match[2].trim();
+        if (match[1] === match[1].toUpperCase()) correct = key;
       }
       const timeLimit = 5000 + difficulty * 5000;
-      items.push({ type, difficulty, question, choices, correct, timeLimit });
+      if (!byDiff[difficulty]) byDiff[difficulty] = [];
+      byDiff[difficulty].push({ type, difficulty, question, choices, correct, timeLimit });
     }
-    const byDiff = {};
-    for (const it of items) {
-      byDiff[it.difficulty] = byDiff[it.difficulty] || [];
-      byDiff[it.difficulty].push(it);
-    }
-    const diffs = Object.keys(byDiff).map(x => parseInt(x, 10)).sort((a, b) => a - b);
-    const out = [];
+    const result = [];
+    const diffs = Object.keys(byDiff).map(Number).sort((a, b) => a - b);
     for (const d of diffs) {
-      const arr = byDiff[d];
-      for (let i = arr.length - 1; i > 0; i--) {
+      let problems = byDiff[d];
+      for (let i = problems.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+        [problems[i], problems[j]] = [problems[j], problems[i]];
       }
-      out.push(...arr);
+      problems = problems.slice(0, 5);
+      result.push(...problems);
     }
-    return out;
+    return result;
   }
   function renderMathHtml(str) {
     let result = '';
@@ -906,6 +892,7 @@
   function prepareBattle() {
     grid = generateMap();
     spawns = spawnPositions(grid);
+    tileTimestamps = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(0));
 
     player = new Actor(spawns.first[0], spawns.first[1], userData.maxHealth, 140, '#10b981');
     player.fogMode = false;
@@ -1236,6 +1223,9 @@
     }
     renderMathProblem(p);
     startMathTimer();
+    // remove later
+    console.log('difficulty:', p.difficulty)
+    console.log('correct:', p.correct);
   }
   function renderMathProblem(p) {
     if (p.type === 1) mathTypeEl.textContent = 'Simplify the polynomial';
@@ -1486,6 +1476,16 @@
       return;
     }
 
+    // Clean up emergency platforms
+    for (let r = 0; r < MAP_H; r++) {
+      for (let c = 0; c < MAP_W; c++) {
+        if (grid[r][c] === 8 && now - tileTimestamps[r][c] > 3000) {
+          grid[r][c] = 0;
+          tileTimestamps[r][c] = 0;
+        }
+      }
+    }
+
     // turn timer checks
     if (now < state.battle.startPeriodEnd) {
       turnIndicatorEl.textContent = `Starting in ${Math.ceil((state.battle.startPeriodEnd - now) / 1000)}s`;
@@ -1594,6 +1594,7 @@
     const r = Math.floor(y / TILE);
     if (inBounds(r, c) && grid[r][c] === 0) {
       grid[r][c] = 8;
+      tileTimestamps[r][c] = Date.now();
       showMessage("Emergency Platform activated!", 'success');
       return true;
     }
