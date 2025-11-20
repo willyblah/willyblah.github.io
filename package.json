@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "type": "commonjs",
   "scripts": {
-    "build": "npm run minify:html && npm run minify:css && npm run minify:js && node update-version.js",
+    "build": "npm run minify:html && npm run minify:css && npm run minify:js && node bump-version.js",
     "minify:html": "html-minifier-terser index.html --collapse-whitespace --remove-comments --output dist/index.html",
     "minify:css": "cleancss styles.css -o dist/styles.css",
-    "minify:js": "terser game.js --compress --mangle --output dist/game.js"
+    "minify:js": "terser game.js -cm -o dist/game.js"
   },
   "devDependencies": {
     "clean-css-cli": "^5.6.3",

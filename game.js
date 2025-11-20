@@ -529,7 +529,7 @@
       this.x = nextX;
       this.y = nextY;
 
-      if ((this.outcome === 'hit' && Math.hypot(this.targetX - this.x, this.targetY - this.y) < 26)
+      if ((this.outcome === 'hit' && Math.hypot(this.targetX - this.x, this.targetY - this.y) < 30)
         || (this.outcome === 'miss' && this.traveled > this.originalDist * 1.1)) {
         this.active = false;
         this.onDeactivate(this.outcome);
