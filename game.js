@@ -35,7 +35,7 @@
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
     Speed: { price: 8, desc: "Speed +50% for 10s." },
     "Emergency Platform": { price: 15, desc: "Automatically saves you from falling into the void." },
-    "Math": { price: 16, desc: "Solve math to build up attack. One mistake flips it on you." }
+    "Math": { price: 1, desc: "Solve math to build up attack. One mistake flips it on you." }
   };
 
   const LEVELS = {
@@ -783,6 +783,7 @@
         <div style="color:var(--muted);font-weight:600">${t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
+      if (k === 'Math') row.style.border = '1px solid var(--accent)';
       row.querySelector('button').addEventListener('click', () => { buyTactic(k); });
       shopTacticsEl.appendChild(row);
     });
