@@ -1,11 +1,17 @@
+> [!IMPORTANT]
+> **Special: The Math Update**
+> Enjoy using the new Math tactic!
+
 # The Game
+
+## Exciting Description
 
 A simple battle game where you fight opponents on islands filled with hazards and buy weird skills in the shop!
 
 ## Quick Start
 
 1. **Open The Game**: Visit <https://willyblah.github.io/>.
-2. **Sign up**: Create an account to save progress.
+2. **Sign up**: Create an account to save your progress.
 3. **Choose a Profile**: Each one has a unique bonus.
 4. **Battle**: Click "Battle" -> Stop the scale to set opponent strength -> Fight!
    - **Controls**: WASD to move, click skills/tactics to use them.
@@ -18,7 +24,7 @@ A simple battle game where you fight opponents on islands filled with hazards an
 - **Grass**: normal ground.
 - **Void**: don't fall down!
 - **Wall**: annoying obstacle.
-- **Water** and **Cobweb**: slow you down
+- **Water** and **Cobweb**: slow you down.
 - **Cactus**: spiky.
 - **Lava**: careful, it's hot!
 - **Mist Switch**: mist will obscure your vision!
@@ -27,4 +33,8 @@ A simple battle game where you fight opponents on islands filled with hazards an
 
 Report bugs and suggest new features [here](https://github.com/willyblah/willyblah.github.io/issues/new)!
 
-You can do anything with the code, as long as you don't cheat.
+You can do anything with the code, as long as you don't cheat. If you are found cheating, you will be punished [evil laugh].
+
+---
+
+Have fun! ^__^
