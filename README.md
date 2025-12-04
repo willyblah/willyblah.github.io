@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> **Special: The Math Update**
+> **Special: The Math Update**  
 > Enjoy using the new Math tactic!
 
 # The Game
