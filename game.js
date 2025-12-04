@@ -35,7 +35,7 @@
     Pushie: { price: 17, desc: "Pushes opponent toward nearest edge." },
     Speed: { price: 8, desc: "Speed +50% for 10s." },
     "Emergency Platform": { price: 15, desc: "Automatically saves you from falling into the void." },
-    "Math": { price: 1, desc: "Solve math to build up attack. One mistake flips it on you." }
+    "Math": { price: 16, desc: "Solve math to build up attack. One mistake flips it on you." }
   };
 
   const LEVELS = {
@@ -783,7 +783,6 @@
         <div style="color:var(--muted);font-weight:600">${t.price}</div>
         <button class="btn" data-name="${k}">Buy</button>
         </div>`;
-      if (k === 'Math') row.style.border = '1px solid var(--accent)';
       row.querySelector('button').addEventListener('click', () => { buyTactic(k); });
       shopTacticsEl.appendChild(row);
     });
@@ -1075,8 +1074,7 @@
       const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       userData = await loadSave();
-      if (!userData.profile) showProfileSelect();
-      else showStart();
+      showStart();
     } catch (err) {
       showMessage(`Log in failed: ${err.message}`, 'error', 3000);
     } finally {
@@ -1147,6 +1145,8 @@
       await loadSkillImages();
       imageLoaded = true;
     }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && !userData.profile) { showProfileSelect(); return; }
     showScreen('start');
     renderStartUI();
     if (loadError) showMessage(loadError, 'error', 3000);
@@ -1399,6 +1399,11 @@
 
     // AI movement
     const currentActor = state.battle && state.battle.currentActor;
+    const oppTile = tileAt(opponent.x, opponent.y);
+    if (oppTile == 4 || oppTile == 5 || oppTile == 8) {
+      const safeSpot = findNearbySafePos(opponent);
+      if (safeSpot) moveTowards(opponent, safeSpot.x, safeSpot.y);
+    }
     if (currentActor === 'opponent' || !opponent.hasOwnProperty('aiTimer') || opponent.aiTimer < Date.now()) {
       const dist = Math.hypot(player.x - opponent.x, player.y - opponent.y);
       if (currentActor === 'player') {
@@ -1794,13 +1799,6 @@
         return;
       }
 
-      // move away from hazard
-      const tileHere = tileAt(opponent.x, opponent.y);
-      if (tileHere === 4 || tileHere === 5) {
-        const safe = findNearbySafePosition(opponent);
-        if (safe) moveTowards(opponent, safe.x, safe.y);
-      }
-
       const candidates = Object.keys(SKILLS).filter(k => battleOppSkills[k] > 0 || battleOppSkills[k] === Infinity);
       const tacticCandidates = Object.keys(TACTICS).filter(k => battleOppTactics[k] > 0);
 
@@ -1926,7 +1924,7 @@
     nextTurnAfterAction('opponent');
   }
 
-  function findNearbySafePosition(actor) {
+  function findNearbySafePos(actor) {
     const steps = 6;
     for (let r = -steps; r <= steps; r++) {
       for (let c = -steps; c <= steps; c++) {
